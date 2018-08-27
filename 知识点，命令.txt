@@ -1,0 +1,281 @@
+
+
+ADMIN  ##########################################
+
+# ping 127.0.0.1  测试目标ip是否可连同
+# whoami   显示当前用户
+# hostname         # hostname  -s   显示主机名
+#  su  ..   切换用户
+# ls ..     列出文件或目录List
+           – -l :以长格式显示,显示详细属性
+           – -h:提供易读的容量单位(K、M等)
+           – -d:显示目录本身(而不是内容)的属性
+           – -A:包括名称以 . 开头的隐藏文档  
+# ls  -l .. 查看..下详细信息  指定了别名，叫ll
+# ls  --help 查看ls的帮助
+# ls -Z(查看文件的标识) ls -Zd '目录'   selinux 安全上下文标识
+# mkdir ..  创建目录
+        -p:建立父目录，建立多级目录
+
+# cd ...    切换工作目录
+     cd  ..  :返回上一层
+     ~user  :用户家目录                    相对路径：不以/开始的路径 
+      /root : 管理员root用户的家目录    绝对路径：以/开始的路径
+
+# pwd       显示当前工作目录
+# touch ..  创建空文件
+# cat ..  # cat  -n .. 在终端屏幕上显示文件内容
+# more ..  # less  ..  分屏显示文件内容
+# head .. # head  -3  # tail ..  # tail  -2 
+ head/tail默认查看文件头部/尾部10行，也可以自行指定
+# grep  adm ..【文件 】  查看包含adm的行
+# mount /dev/cdrom /nsd  #进行挂载,让/nsd成为/dev/cdrom的访问点
+#  umount  ..   卸载
+# du -sh  ..    统计目录文件大小
+# alias  别名='实际运行的命令'   命令的别名：简化复杂的命令
+# rm 删除 — Remove
+      – -r、-f:递归删除(含目录)、强制删除
+# mv 移动/改名— Move        
+       – 格式:mv   [选项]...   原文件...     目标路径
+        2重命名:路径不变的移动  原文件（目录） 命名为 目标文件（目录）
+# cp 复制  
+      —cp  [选项]...   原文件...      目标路径
+       – -r:递归,复制目录时必须有此选项
+    # \cp  -r  ..  ..  #取消覆盖的提示(复制过再复制时会提示是否覆盖)
+
+
+# uname  -r  查看内核版本号
+# cat  /etc/redhat-release 查看操作系统的版本号
+# lscpu      查看CPU
+# cat  /proc/meminfo   或 # free  -m 查看内存信息
+# ifconfig   查看网卡信息
+# cat /etc/sysconfig/network-scripts/ifcfg-eth0
+
+# shutdown  -h  now             关机
+# reboot 或 # shutdown  -r  now  重起
+# ssh  root@..   远程管理服务器：以root身份登陆..
+
+
+
+
+• Tab键自动补全
+- Ctrl + c :结束正在运行的命令
+– Ctrl + l :清空整个屏幕
+– Esc + . 或 Alt  + . :粘贴上一个命令的参数
+– Ctrl + c :结束正在运行的命令
+– Ctrl + u : 清空至行首
+– Ctrl + w : 往回删除一个单词(以空格界定)
+
+• 针对不确定的文档名称,以特殊字符表示
+  – *:任意多个任意字符
+  – ?:单个字符
+  – [a-z]:多个字符或连续范围中的一个,若无则忽略
+  – {a,min,xy}:多组不同的字符串,全匹配
+
+
+
+
+• vim文本编辑器
+  – 格式:vim [[/目录/]文件名]
+– 若目标文件不存在,则新建空文件并编辑
+– 若目标文件已存在,则打开此文件并编辑      
+三个模式：命令模式     输入模式(插入模式)       末行模式
+
+# rht-vmctl reset ...  真机：还原虚拟机
+# ping ...          1.真机上操作：测试真机能否通信
+# ssh   root@  .    2.真机上操作：远程管理
+# ssh -X root@ .     3.远城管理打开对方的图形程序
+# firewall-config    #防火墙图形配置程序
+
+# rpm  -q  .  软件名（程序名） #检测程序是否安装
+# rpm -ivh .    #安装软件包
+# rpm -e  ..     #卸载软件包
+了解：系统导入红帽签名信息
+# rpm --import /dvd/RPM-GPG-KEY-redhat-release 
+
+# yum -y      ..   #安装软件包
+# yum clean all .  #清空Yum缓存
+# yum  remove ..   #卸载软件包
+# yum  search ..    #查询软件包信息
+
+wget下载工具
+– wget  软件包的URL网址
+– wget  软件包的URL网址    -O  /目录路径/新文件名
+
+
+配置网络
+• 查看nmcli connection 识别网卡的名字
+# nmcli connection show
+• 配置IP地址、子网掩码、网关地址
+# nmcli   connection   modify   'System eth0'    
+ ipv4.method   manual  
+ ipv4.addresses  '172.25.0.100/24    172.25.0.254'
+ connection.autoconnect   yes
+# cat /etc/sysconfig/network-scripts/ifcfg-eth0
+             #查看网卡配置文件
+# nmcli connection up 'System eth0'     激活配置
+# route   #查看网关的指令          gateway(网关)  
+# vim /etc/resolv.conf       永久DNS服务器地址
+nameserver  172.25.254.254
+# nslookup server0.example.com    #测试解析
+
+
+  > :覆盖重定向
+  >> :追加重定向
+# echo nameserver 172.25.254.254  > /etc/resolv.conf 非交互式
+
+管道操作：将前面命令的输出结果,交由后面命令继续处理,作为后面命令的参数
+# ifconfig | head -2     显示第一张网卡的IP地址
+
+# bc    交互式计算器   加 +  减  -   乘 *   除 /     取余运算  %
+
+
+用户基本信息存放在 /etc/passwd 文件（户口本）
+# head  -1  /etc/passwd
+        root:x:0:0:root:/root:/bin/bash
+用户名:密码占位符:UID:基本组GID:用户描述信息:用户家目录:解器程序
+– useradd [选项]... 用户名
+– -u 用户id、-d 家目录路径、-s 解释器程序（登录Shell）、-G 附加组
+/sbin/nologin : 禁止用户登陆系统
+# grep          # id
+– passwd [用户名]
+– echo '密码'    |    passwd --stdin 用户名     非交互式设置密码
+– usermod   修改用户属性
+– userdel  [-r]  用户名   #连同家目录一并删除
+
+组基本信息存放在 /etc/group 文件
+# grep stugrp /etc/group
+ stugrp:x:1303:
+组名:组密码占位符:GID:组成员列表
+– groupadd [-g 组ID] 组名       
+– gpasswd -a 用户名  组名     添加组员
+– gpasswd -d 用户名  组名     删除
+– groupdel 组名
+
+• tar 集成备份工具
+– -c:创建归档
+– -x:释放归档
+– -f:指定归档文件名称
+– -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+– -t:显示归档中的文件清单
+– -C:指定释放的位置
+打包：
+   tar  选项       /路径/压缩包的名字       /路径/被归档及压缩的源文件
+解包:
+   tar  选项       /路径/压缩包的名字     -C  /路径
+
+
+– chmod [-R] 归属关系+-=权限类别    文档...
+        [-R] 递归设置权限             #ls -ld  
+
+– chown [-R] 属主         文档...
+– chown [-R] :属组       文档...
+– chown [-R] 属主:属组  文档...
+        [-R]  递归修改归属关系
+
+Set GID   目录下新增的文档自动设置与父目录相同的属组
+• 附加在属组的 x 位上    
+– 属组的权限标识会变为 s     # chmod g+s /nsd06
+Set UID     • 附加在属主的 x 位上   变为 s
+Sticky Bit  • 附加在其他人的 x 位上  会变为 t
+
+
+ACL   
+– getfacl 文档....
+– setfacl [-R] -m  u:用户名:权限类别   文档...
+– setfacl [-R] -m  g:组名:权限类别   文档...
+– setfacl [-R] -b  文档...      #清空所有的ACL策略
+– setfacl [-R] -x  文档...      #删除指定的ACL策略
+
+ grep  '字符串'    /路径/文本文件
+        -i 忽略大小写
+        -v 取反
+          特殊的过滤条件
+         ^root   必须以root开头
+         root$   必须以root结尾
+                 ^$           匹配空行
+
+find 查找文档所在位置
+     find   查询路径     条件
+      -type 类型(f 文件   d 目录   l 快捷方式)
+      -name  "名字
+       多条件的查找  -a   且and，可以不写，默认-a   -O(或)
+       -size +-大小   k M G     按大小查找
+       -user     按照所有者查找
+       -iname   • 根据名称查找,忽略大小写
+       -group   • 根据所属组查找
+       -maxdepth  限制目录查找的深度(最大层数)
+       -mtime +-天数 • 根据文件修改时间，所有时间都是过去时间
+
+   查找完了以后，查找的结果～直接执行处理
+           find .. .. -exec  处理命令 {}    \;
+
+
+
+– 引用变量值:$变量名
+– 查看变量值:echo  $变量名、echo  ${变量名}
+  $[ ] :代表运算   
+   $( )与反撇号  ` ` ： 将命令的输出结果，作为命令的参数
+  储存随机数的变量：RANDOM
+  USER=当前登陆的用户名
+位置变量
+• 在执行脚本时提供的命令行参数
+– 表示为 $n,n为序号
+– $1、$2、.. .. 
+ read -p  :  可以在脚本运行的时候，从命令行传递变量的值
+
+	$#  已加载的位置变量的个数
+	$*  所有位置变量的值,再重新输出一遍
+	$?  程序退出后的状态值,0表示正常,其他值异常
+
+条件测试
+   [  测试表达式  ]      #每一部分都要有空格
+    • 检查文件状态
+	-e：判断文档是否存在，存在为真
+	-d：存在并且为目录为真
+	-f：存在并且为文件为真
+	-r：存在并且对其有读取权限为真
+	-w：存在并且对其有写入权限为真
+	-x：存在并且对其有执行权限为真
+  • 比较整数大小( 带e字母的都有等于二字)
+	-gt:大于
+	-ge:大于等于   
+	-eq:等于         
+	-ne:不等于
+	-lt:小于
+	-le:小于等于
+  • 字符串比对
+   ==: 字符串相等为真
+   !=:字符串不相等为真
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

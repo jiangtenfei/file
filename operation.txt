@@ -1,0 +1,970 @@
+
+
+
+			operation   operation 
+
+firefox https://github.com/redhatedu/course
+
+
+    网络          F12
+
+Nginx  ——  engin X
+
+
+
+
+root   ——linux
+rwx
+  vsftpd,httpd,nginx服务 [共享]
+
+
+administrator 禁用   微软
+tom(管理员组)
+      QQ程序（读哪些文件）
+谁启动的这个程序
+
+
+xx-devel    -devel  依赖包
+
+
+ps aux  | grep nginx     
+
+
+netstat  | wc -l       netstat   网络连接状态
+netstat  -a  -n       -a  看所有   -n  以数字显示端口
+
+
+
+nginx.conf
+ 全局设置：用户，日志，
+
+html   ~ /usr/local/nginx/html
+
+index  客户访问时，设定默认访问的首页  index 指出首页
+
+htpasswd -c /usr/local/nginx/pass tom  # -c create 创建文件 用户
+     #没 有 -c   # 追加用户
+
+
+    -s reload    #不关服务的情况下，配置文件重新加在一遍
+
+
+
+
+seo.chinaz.com/   站长工具  
+www.51.cto.com
+
+
+
+
+光表放到第一个# 上，ctrl + v    下 键     x  批量去注释
+
+
+
+DNS(域名- - -IP)   所有人
+
+/etc/hosts    本地解析     
+
+
+加密算法     ： 对称算法    非对称算法   信息摘要
+    对称算法   AES   DES  单机，自己设自己用
+    非对称     RSA    DSA    网络数据访问，访问网络
+
+
+/usr/local/nginx/conf      默认私钥生成路径
+openssl genrsa         生成私钥
+                   > cert.key    私钥的名称，可以随便写
+                              教程里用cert  网页已经做好了
+
+openssl req -new -x509 -key cert.key > cert.pem  生成证书（公钥
+
+
+
+
+
+*****
+# yum -y install gcc pcre-devel openssl-devel 
+]# ./configure   \
+> --prefix=/usr/local/nginx   \                //指定安装路径
+> --user=nginx   \                            //指定用户
+> --group=nginx  \                            //指定组
+> --with-http_ssl_modul
+
+# ln -s /usr/local/nginx/sbin/nginx /sbin/
+# netstat  -anptu  |  grep nginx
+#ps -aux    | grep nginx
+
+# vim  /usr/local/nginx/conf/nginx.conf
+	server { 
+		...
+        auth_basic "Input password:";      //认证提示符
+        auth_basic_user_file "/usr/local/nginx/pass"; 
+
+# yum -y install httpd-tools
+#htpasswd -c /usr/local/nginx/pass tom  #创建密码文件 增加 不要-c
+#cat /usr/local/nginx/pass   查看用户，密码 
+
+* 基于域名的虚拟主机  
+	server {
+		listen 80;
+		server_name www.b.com;     #域名
+	location / {
+		root www;
+		index index.html index.html;
+	}
+	}
+	#mkdir /usr/local/nginx/www
+	#echo "www" > /usr/local/nginx/www/index.html
+
+   端口  server { listen 8080;  ..
+   IP   server { listen 192.168.4.11:80;  ..
+
+* SSL 加密虚拟主机
+	# cd /usr/local/nginx/conf
+	# openssl genrsa > cert.key    生成私钥
+	# openssl req -new -x509 -key cert.key > cert.pem /生成证书
+
+
+
+2222222222222222222222222222222222222222222222222222222222
+22222222222222222222222222222222222222222222222222222222222
+222222222222222222222222222222222222222222222222222222222222222
+
+构建LNMP  平台   准备的东西
+
+LNMP (Linux   Nginx   MySQL   PHP )
+                             · 主流的企业网站平台之一
+
+静态，动态     ？   ？
+无论访问多少次，内容一直都是一样 的
+动态  无需人为更改，不同的访问内容会变化， 需要脚本执行  动态网站
+
+PHP   典型的网页制作语言  ，专用的，只能做网页   
+         Java 可以制作网页，写小软件..
+
+   Nginx  只能制作静态的网页    不做任何解释，只是将网页展示出来
+
+linux  系统  nginx 接受数据，处理静态网页 mysql 存数据  php 动态网页
+
+
+nginx
+mariadb  mariadb-server mariadb-devel
+php     php-fpm   php-mysql
+
+rpm包   下载包网址 www.centos.org    or 百度 centos 镜像源
+
+nginx   :80     mariadb  :3306      php  :9000
+
+
+动静分离网站的实验   步骤
+
+动静分离
+                    nginx         php
+
+nginx 实现：
+如果用户访问的是静态页面，则自己直接找到页面，直接返回
+如果用户访问的是动态php，则转发给9000 端口，解释后，再返回
+
+       location   匹配用户的地址栏
+	 location  /  {      匹配地址栏  /
+		allow all;
+	}
+	firefox http://www.a.com/   地址栏
+	location  /test  {     匹配地址栏   /test
+		allow all;
+		deny 1.1.1.1;
+	}
+	firefox  http://www.a.com/test/   地址栏
+	location  /abc  {      匹配地址栏  /abc
+		deny all;
+	}
+	firefox  http://www.a.com/abc/    地址栏
+
+	#不论location  / 的位置前后，优先级都是最低的。默认匹配一切
+
+～ 匹配                     *动静分离
+      * location / {    #静态        /   除.php 结尾其他的所有
+		root html;
+	}
+	location  ~ \.php$ {   #动态
+		fastcgi_pass  127.0.0.1:9000;  #转发给9000端口处理
+		include fastcgi.conf;
+	}
+       *firefox  http://192.168.4.5/a.html
+	  firefox  http://192.168.4.5/a.php        .php 结尾
+  *FastCGI  转发
+#
+#FastCGI 原理：
+ #1、Web Server启动时载入FastCGI进程管理器（IIS ISAPI或Apache    
+     Module)
+ #2、FastCGI进程管理器自身初始化，启动多个CGI解释器进程(可见多个php-
+     cgi)并等待来自Web Server的连接。
+  #3、当客户端请求到达Web Server时，FastCGI进程管理器选择并连接到一个
+     CGI解释器。Web server将CGI环境变量和标准输入发送到FastCGI子进程
+     php-cgi。
+  #4、FastCGI子进程完成处理后将标准输出和错误信息从同一连接返回
+      Web Server。
+
+
+
+ #注意，FastCGI的内存消耗问题，一个PHP-FPM解释器将消耗约30M的内存。
+
+ #tailf /usr/local/nginx/logs/error.log         nginx 日志文件
+             /usr/local/nginx/logs/access.log   nginx 错误日志
+		/var/log/php-fpm/www-error.log     php 错误日志
+			*?? 错误日志文件不会自己生成吗？ 怎么没有？
+    ·  rewrite  regex  replacement flag  #regex 正则表达式 
+    · rewrite  旧地址  新地址  [ 选项 ]
+         rewrite /a.html  /b.html;
+
+
+用电脑输入www.sina.com: 宽屏 pc
+用手机输入www.sina.com: 窄屏 phone
+  /usr/local/nginx/html/pc/
+  /usr/local/nginx/html/phone/
+
+   $http_user_agent
+
+# yum -y install   mariadb   mariadb-server   mariadb-devel
+# yum -y  install  php   php-mysql
+# yum -y  install php-fpm-5.4.16-42.el7.x86_64.rpm
+
+
+
+ **grant select on *.* to tom@1.1.1.1 identified by '123';
+
+
+
+
+
+%%%%%%%%%  LNMP
+
+   *fastcgi.conf;
+   
+   lnmp_soft/php_scripts/mysql.php
+   *cp php_scripts/mysql.php    /usr/local/nginx/html/
+
+
+   rewrite /a.html  /b.html;
+   rewrite /a.html  /b.html  redirect; 
+
+    rewrite ^/(.*)$ http://www.tmooc.cn/$1;
+
+
+	if ($http_user_agent ~* firefox) {  //识别客户端firefox
+	rewrite ^/(.*)$ /firefox/$1;
+	}
+
+
+	）地址重写格式【总结】
+	rewrite 旧地址 新地址 [选项];
+	  last  不再读其他rewrite
+	  break 不再读其他语句，结束请求    （location  /b.txt {..
+	  redirect 临时重定向                      不再匹配  比last级别高）
+	  permament 永久重定向
+
+
+
+网络蜘蛛     百度   谷歌 
+蜘蛛-----------------------爬--------------------->网站
+                           /shoes.html, xiezi.html
+       rewrite /shoes.html   /xiezi.html  redirect;
+                                         permanent
+                           premanent --在数据库直接更改
+
+SEO search engine op？？       搜索引擎优化
+SEM  花钱  标签，广告
+
+
+****
+  LNMP  环境 nginx mariadb mariadb-server mariadb-devel
+		php php-fpm  php-mysql
+	php-fmp 配置文件  /etc/php-fpm.d/www.conf
+	nginx ..	/usr/local/nginx/conf/nginx.conf
+	
+	动静分离   location ~ \.php$ {     # ..  fastcgi.conf
+
+	地址重写   rewrite /a.html  /b.html;     .. redirect;
+	rewrite ^/  http://www.tmooc.cn/;   写在 localtion 外面
+	rewrite ^/(.*) http://www.tmooc.cn/$1;    /下的目录..
+	if($http_user_agent ~* firefox){
+	rewrite ^/(.*)$ /firefox/$1；
+	}
+
+
+	rewrite 旧地址 新地址 [选项];
+	last 不再读其他rewrite
+	break 不再读其他语句，结束请求
+	redirect 临时重定向
+	permament 永久重定向
+
+
+
+33333333333333333333333333333333333333333333333333333333
+333333333333333333333333333333333333333333333333333333333
+3333333333333333333333333333333333333333333333333333333333
+
+
+
+1)修改/usr/local/nginx/conf/nginx.conf配置文件
+
+**配置upstream服务器集群池
+   #使用upstream定义后端服务器集群，集群名称任意(如webserver)
+   #使用server定义集群中的具体服务器和端口
+	upstream webserver {
+                server 192.168.2.100:80;
+                server 192.168.2.200:80;
+        }
+
+   #通过proxy_pass将用户的请求转发给webserver集群
+            proxy_pass http://webserver;
+
+*server 192.168.2.100 weight=1 max_fails=1 fail_timeout=30;
+  #weight    设置服务器权重值，默认值为1
+  #max_fails 设置最大失败次数
+  #fail_timeout 设置失败超时时间，单位为秒
+  #down   标记服务器已关机，不参与集群调度
+
+
+# ./configure   \
+> --with-http_ssl_module     //开启SSL加密功能
+> --with-stream        //开启4层反向代理功能
+
+
+   nginx.org    官网
+
+
+stream {
+            upstream backend {
+            server 192.168.2.100:22;   //后端SSH服务器的IP和端口
+            server 192.168.2.200:22;
+	    }
+            server {
+            listen 12345;          //Nginx监听的端口
+                proxy_connect_timeout 1s;
+                proxy_timeout 3s;
+             proxy_pass backend;
+             }
+}
+http {
+
+
+
+
+
+用户认证
+虚拟主机
+https加密网站
+LNMP
+地址重写
+代理服务（http,tcp,udp,ip）
+
+
+ss  等同于 netstat  在rhel7里面，用 ss
+
+1）优化前使用ab高并发测试                     //提示打开文件数量过多
+# ab -n 2000 -c 2000 http://192.168.4.5/   #失败了，改200就正常
+
+
+2）修改Nginx配置文件，增加并发量   自身文件
+    worker_processes  2;    //与CPU核心数量一致
+
+    worker_connections 65535;    //每个worker最大并发连接数
+    use epoll;
+
+3）优化Linux内核参数（最大文件数量）   selinux
+# ulimit -a                        //查看所有属性值
+# ulimit -Hn 100000                //设置硬限制（临时规则）
+# ulimit -Sn 100000                //设置软限制（临时规则）
+
+# vim /etc/security/limits.conf
+    #用户或组    硬限制或软限制    需要限制的项目   限制的值
+
+优化Nginx数据包头缓存
+
+client_header_buffer_size    1k;     //默认请求包头信息的缓存    
+large_client_header_buffers 4 4k; //大请求包头部信息的缓存个数与容量
+
+浏览器本地缓存静态数据
+firefox  about:cache
+                                        不长修改的东西，缓存
+location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml)$ {
+expires        30d;            //定义客户端缓存时间为30天
+}
+
+自定义报错页面
+error_page   404  /40x.html;    //自定义错误页面  
+                       页面内容自定意，叫什么都可以    公司平常是找人作的页面
+4）常见http状态码   F12
+    200  一切正常
+    301   永久重定向
+    302   临时重定向
+    401   用户或密码错误
+    403   禁止访问
+    404   文件不存在
+    414   请求URI头部过长
+    500   服务器内部错误
+   502   Bad Gateway
+
+
+
+
+
+
+
+echo "aa"  | md5sum      以 二进制 模式 读入 文件
+                               对 给定 的 文件 检验 MD5 效验码
+
+
+6)  如何查看服务器状态信息
+
+./configure  --help | grep status
+
+--with-http_stub_status_module 
+
+
+location /status {
+                stub_status on;
+        }
+
+七：对页面进行压缩处理           gzip a.txt   gzip 压缩
+
+
+gzip on;                            //开启压缩
+gzip_min_length 1000;                //小文件不压缩
+gzip_comp_level 4;                //压缩比率
+gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+                                    //对特定文件压缩，类型参考mime.types
+
+jpg,mp4,mp3,png,gif 多媒体文件
+   不压缩      修改文件格式             
+
+   *nginx  压缩
+    *浏览器解压  ----------------> 所有浏览器都支持 gzip解压
+
+
+八：服务器内存缓存
+
+	http { 
+	open_file_cache          max=2000  inactive=20s;
+	        open_file_cache_valid    60s;
+	        open_file_cache_min_uses 5;
+	        open_file_cache_errors   off;
+	//设置服务器最大缓存2000个文件句柄，关闭20秒内无请求的文件句柄
+	//文件句柄的有效时间是60秒，60秒后过期
+	//只有访问次数超过5次会被缓存
+	} 
+
+
+
+****    添加服务器池   反向代理    upstream 服务器集群池属性
+	proxy [http]
+	proxy [tcp]    --with-stream 支持4层TCP/UDP代理的Nginx服务器
+	stream {		
+	upstream xyz {	#定义后端服务集群
+	   server ip1:22;        #ip_hash;
+	   server ip2:80;		weight=2;    max_fails;
+	}				fail_timeout;  down; 
+	server {				属性
+	  listen 12345;
+	  proxy_pass xyz;        proxy_pass http://xyz;
+	}   }
+	http { 	..
+*** ** 优化----  参考官网、案例
+	# ab -n 2000 -c 2000 http://192.168.4.5/ 
+	  worker_processes 2;
+	  worker_connections 65535;
+	#ulimit -a   #ulimit -Hn 100000  #ulimit -Sn 100000
+	#vim /etc/security/limits.conf
+	优化Nginx数据包头缓存   cat lnmp_soft/buffer.sh  测试脚本
+	修改Nginx配置文件，增加数据包头部缓存大小
+	  client_header_buffer_size  1k;    默认请求包头信息的缓存
+	  large_client_header_buffers 4 4k;  包头 缓存个数与容量
+
+	location ~* \.(jpg|png)${
+	   expires  30d;  }        缓存时间
+	
+	error_page  404  /40x.html;    自定错误页面
+
+
+	> --with-http_ssl_module      //开启SSL加密功能
+	> --with-stream              //开启TCP/UDP代理模块
+	> --with-http_stub_status_module  //开启status状态页面
+
+	gzip on;               //开启压缩
+	gzip_min_length 1000;       //小文件不压缩
+	gzip_comp_level 4;     //压缩比率
+gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;     //对特定文件压缩，类型参考mime.types
+
+	http { 
+	open_file_cache          max=2000  inactive=20s;
+        open_file_cache_valid    60s;
+        open_file_cache_min_uses 5;
+        open_file_cache_errors   off;
+	//设置服务器最大缓存2000个文件句柄，关闭20秒内无请求的文件句柄
+	//文件句柄的有效时间是60秒，60秒后过期
+	//只有访问次数超过5次会被缓存
+	} 
+
+
+
+
+44444444444444444444444444444444444444444444444444444444444444444
+4444444444444444444444444444444444444444444444444444444444444444444
+44444444444444444444444444444444444444444444444444444444444444
+
+
+
+*MySQL      *Oracle     *Microsoft SQL Server     前三的数据库
+
+
+*MariaDB     第 14  位
+
+mysql   , mariadb
+
+数据库---->数据表1
+name   age  sex  address  ...
+tom     23  male   ip      ..
+
+数据库----->数据表2
+
+           Relational DBMS
+传统数据库---------------------------------->  网站里最慢的，网站打开速度的一个瓶颈
+    ·性能   CPU缓存>内存>磁盘>数据库
+    ·价格   、、、、、、、、、、、、、
+
+Key-value store   ,缓存数据库   数据存放在内存里的  缺点，重起数据就没了
+*Redis    
+
+注册tom，123------>内存--->硬盘
+
+*Memcached   功能简单，数据会丢失    读写速度快  奇快
+
+if   先查memcached内存；then
+     从内存取，给用户
+else
+     从硬盘mysql查，给用户
+     写入到memcached内存
+fi     
+
+
+
+environment  环境变量
+
+/usr/lib/systemd/system/memcached.service
+/etc/sysconfig/memcached 
+
+
+
+yum list | grep memcache
+
+
+ctrl +v  下键  shift+i （大写i） # esc #批量加注释
+ctrl +v  下键  x   #批量注销注释
+
+
+/var/lib/php/session/
+
+
+tailf /usr/local/nginx/logs/error.log  #查看报错信息
+
+
+*******
+一：构建memcached服务 
+          # yum -y  install   memcached
+     配置文件（查看即可，不需要修改）
+        # vim /usr/lib/systemd/system/memcached.service
+        # vim /etc/sysconfig/memcached
+     启动服务并查看网络连接状态验证是否开启成功：
+   	# systemctl  start  memcached
+	# systemctl  status  memcached
+	# netstat  -anptu  |  grep memcached
+		#使用ss命令可以替代netstat，功能与选项一样
+
+二：使用telnet访问memcached服务器                 ***了解即可
+	使用yum安装telnet
+	# yum -y install telnet
+   使用telnet连接服务器测试memcached服务器功能，包括增、删、改、查等操作。
+	# telnet  192.168.4.5  11211
+	set name 0 180 3      //定义变量，变量名称为name
+	plj                     //输入变量的值，值为plj
+	get name                        //获取变量的值
+	
+	add myname 0 180 10      //新建，myname不存在则添加，存在则报错
+	set myname 0 180 10       //添加或替换变量
+	replace myname 0 180 10   //替换，如果myname不存在则报错
+	get myname              //读取变量
+	append myname 0 180 10    //向变量中追加数据
+	delete myname              //删除变量
+	stats                   //查看状态
+	flush_all                //清空所有
+	quit                    //退出登陆
+                      
+LNMP+memcached
+     
+    gcc openssl-devel pcre-devel nginx mariadb 
+	mariadb-server mariadb-devel php php-mysql php-fpm
+       #修改Nginx配置文件        服务重起
+       selinux  、 防火墙
+
+三：创建PHP页面，使用PHP语言测试memcached服务
+ 	测试页面可以参考lnmp_soft/php_scripts/mem.php
+
+注意：这里因为没有给PHP安装扩展包，默认PHP无法连接memcached数据库，需要给PHP安装扩展模块才可以连接memcached数据库。
+3）为PHP添加memcache扩展
+	# yum -y install  php-pecl-memcache
+	# systemctl restart php-fpm
+
+
+案例3：PHP的本地Session信息
+	一，部署后端LNMP   #  ./configure   \
+				> --with-http_ssl_module 
+	二：启动LNMP服务器相关的服务
+
+	三：部署前端Nginx调度服务器
+
+	四：测试环境是否配置成功
+
+	五：部署测试页面      不需要自己创建，复制过去
+		# cd lnmp_soft/php_scripts/php-memcached-demo
+		cp -a  *  /usr/local/nginx/html/
+
+案例4：PHP实现session共享
+	1)# yum -y install memcached
+	  # systemctl restart memcached
+
+	2)# yum -y install  php-pecl-memcache
+	  # vim  /etc/php-fpm.d/www.conf   
+	php_value[session.save_handler] = memcache
+	php_value[session.save_path] = "tcp://192.168.2.5:11211"
+      # systemctl  restart  php-fpm
+
+
+
+
+**** memcached    telnet  PHP+memcached
+     
+LNMP (执行环境）  yum list |grep memcache    * php-pecl-memcache
+
+	  web1(动态）/var/lib/php/session[SID]
+proxy 						memcached(信息
+	  web2
+
+
+#for i in 100 200 
+> do 
+> scp -r lnmp_soft  192.168.2.$i:/root/
+> done
+
+
+# for i in 100 200 
+> do 
+> ssh 192.168.2.$i "yum -y install gcc pcre-devel openssl-devel mariadb mariadb-server php php-mysql "
+> done
+
+
+
+
+
+55555555555555555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555
+
+
+
+  ·JDK 是Sun针对Java开发者推出的Java语言的软件开发工具包
+  · JDK 是整个Java的核心
+    —包括了 Java 运行环境  工具 基础的类库
+
+open-jdk
+
+java[sun] --->oracle 收购，告   addriod[java,jdk]  goole  open-jdk
+
+[rhel7]open-jdk 
+
+sun[openoffice]--oracle  ---> apache
+		libreoffice 开放的，office 开发的人员研究的免费公开版 
+sun[mysql]------>
+		mariadb
+sun[java]------>jdk		sun 最牛的公司
+		open-jdk
+
+JRE  JDK的子集，Java的运行环境，精简版  没有开发工具
+
+· 常见Servlet容器
+	—IBM   	websphere
+	—Oracle 	weblogic
+	—Apache	tomcat ------->公开，免费     赚取人工的服务费
+	—RedHat	Jboss      #其他的都是收费的
+
+** 1：安装部署Tomcat服务器
+	# yum –y install  java-1.8.0-openjdk      //安装JDK
+	# yum -y install java-1.8.0-openjdk-headless  //安装JDK
+	# java -version          //查看JAVA版本
+		#配置环境时默认已经安装过了，查看下版本号，不需要再安装
+	# tar -xf  apache-tomcat-8.0.30.tar.gz  解包
+	# mv apache-tomcat-8.0.30  /usr/local/tomcat 移动，重命名
+	# ls /usr/local/tomcat
+
+	bin/               //主程序目录
+	lib/               //库文件目录
+	logs/              //日志目录  
+	temp/              //临时目录
+	work/       	//自动编译目录jsp代码转换servlet
+	conf/		      //配置文件目录
+	webapps/          //页面目录
+
+	# /usr/local/tomcat/bin/startup.sh   #启动
+	# netstat -nutlp |grep java    //查看java监听的端口  #ss
+	（提示：如果检查端口时，8005端口启动非常慢，可用使用下面的命令用
+	urandom替换random（非必须操作）。
+		# mv /dev/random  /dev/random.bak
+		# ln -s /dev/urandom  /dev/random）
+
+    ：修改Tomcat配置文件
+   # vim  /usr/local/tomcat/webapps/ROOT/test.jsp 创建测试JSP页面
+	# /usr/local/tomcat/bin/shutdown.sh
+	# /usr/local/tomcat/bin/startup.sh  #重启服务
+	# netstat -nutlp |grep java    //查看java监听的端口
+	# firefox http://192.168.2.100:8080     #测试页面
+	# firefox http://192.168.2.100:8080/test.jsp
+
+   2：使用Tomcat部署虚拟主机
+	# vim /usr/local/tomcat/conf/server.xml 
+			#修改server.xml配置文件，创建虚拟主机
+	# mkdir -p  /usr/local/tomcat/{a,b}/ROOT
+	    */usr/local/tomcat/ */ROOT  #网页路径
+
+	# echo "AAA"   > /usr/local/tomcat/a/ROOT/index.html
+	# echo "BBB" > /usr/local/tomcat/b/ROOT/index.html
+			#创建虚拟主机对应的页面根路径
+	# /usr/local/tomcat/bin/shutdown.sh
+	# /usr/local/tomcat/bin/startup.sh
+			#重启Tomcat服务器
+	# vim /etc/hosts  #客户端设置host文件，并浏览测试页面进行测试
+	# firefox http://www.a.com:8080/    //注意访问的端口为8080
+
+       使用docBase参数可以修改默认网站首页路径
+	# vim /usr/local/tomcat/conf/server.xml
+	<Host name="www.b.com" appBase="b" unpackWARS="true"
+	 autoDeploy="true">
+	<Context path="" docBase="base" reloadable="true"/>
+	</Host>
+	# mkdir  /usr/local/tomcat/b/base
+	# echo "BASE" > /usr/local/tomcat/b/base/index.html
+	# /usr/local/tomcat/bin/shutdown.sh
+	# /usr/local/tomcat/bin/startup.sh
+	# firefox http://www.b.com:8080/ //结果为base目录下的页面内容
+
+	跳转
+	# vim /usr/local/tomcat/conf/server.xml
+	<Host name="www.a.com" appBase="a" unpackWARS="true"
+	 autoDeploy="true">
+	<Context path="/test" docBase="/var/www/html/" />
+	</Host>
+	# echo "Test" > /var/www/html/index.html
+			...重起  访问页面测试
+
+	配置Tomcat支持SSL加密网站    *keytool --help
+	# keytool -genkeypair -alias tomcat -keyalg RSA -
+	keystore /usr/local/tomcat/keystore 
+				#创建加密用的私钥和证书文件
+	//提示输入密码为:123456
+	//-genkeypair     生成密钥对
+	//-alias tomcat     密钥别名
+	//-keyalg RSA     定义密钥算法为RSA算法
+	//-keystore  定义密钥文件存储在:/usr/local/tomcat/keystore
+	# vim /usr/local/tomcat/conf/server.xml
+		#修改配置文件 ，创建支持加密连接的Connector
+	<Connector port="8443" .... 
+	keystoreFile="/usr/local/tomcat/keystore"
+      keystorePass="123456"   #添加，路径  密码
+	//备注，默认这段Connector被注释掉了，打开注释，添加密钥信息即可
+		#重起  进入页面测试 https
+
+	/prot="8443"      dd  "<!--      -->" #java的注释
+
+
+** Varnish 缓存服务器   高性能  更快  管理更方便  优点
+
+	一：构建Web服务器    httpd  nginx  都可以
+                    #提供一个访问页面
+	二：部署Varnish缓存服务器
+	   gcc  readline-devel ncurses-devel pcre-devel 
+	  python-docutils-0.11-0.2.20130715svn7687.el7.noarch.rpm
+
+
+
+
+
+
+66666666666666666666666666666666666666666666666666666666666666666666
+66666666666666666666666666666666666666666666666666666666666666666666
+66666666666666666666666666666666666666666666666666666666666666666666
+
+
+
+subversion   svn       检测版本        允许和他人协作 并跟踪文档
+
+
+
+SVN 版本控制
+代码[模块]
+
+运维
+
+
+
+
+
+
+
+
+
+
+ftp[common]  test.sh
+
+A   B   C    D
+
+
+一：安装Subversion服务器
+ yum -y install subversion
+
+mkdir /var/svn
+svnadmin create /var/svn/project    创建版本库
+du -sh project/    空仓库的大小，
+
+/usr/lib/systemd/system    决定了systemctl 可以启动 的文件
+ls -R | wc -l  
+
+# svn import . file:///var/svn/project/ -m "Init Data"
+		 当前    #本地导入初始化数据
+
+
+SecureCRT,putty  金山  输入ip，用户名，密码   远程服务器 
+官方没有汉语，在公司的时候就不要用   非官方版 尽量少用 有bag 漏洞
+
+
+
+
+版本控制
+rpm -ivh   安装
+rpm -qa	all
+rpm -qf	哪个软件包提供的命令   rpm -qf /usr/bin/ls
+rpm -ql	列出
+rpm -qi	软件包信息
+rpm -e    删
+
+
+
+源码----->RPM
+1，光盘没有
+2，光盘有，但是 rpm -ivh #########
+
+
+源码----安装--->  （createrepo/
+
+
+
+****** 一：安装Subversion服务器
+	#yum -y install subversion
+	# mkdir /var/svn/
+	# svnadmin create /var/svn/project   )创建版本库
+	# cd /usr/lib/systemd/system/ 
+	# svn import . file:///var/svn/project/ -m "Init Data"
+			本地导入初始化数据
+	# vim /var/svn/project/conf/svnserve.conf
+	修改配置文件，创建账户与密码
+	anon-access = none
+	auth-access = write
+	password-db = passwd
+	authz-db = authz
+	# vim /var/svn/project/conf/passwd 
+	[users]
+	harry = 123456
+	//用户名和密码
+	tom = 123456
+	//用户名和密码
+	# vim /var/svn/project/conf/authz 
+	[/]                    //定义ACL访问控制
+	harry = rw       //用户对项目根路径可读可写
+	tom = rw
+	# svnserve -d  -r /var/svn/project
+	# netstat -nutlp |grep svnserve
+		启动服务
+	# cd /tmp
+	# svn --username harry --password 123456 \
+	co svn://192.168.2.100/ code    将服务器上的代码下载到本地
+	
+	Store password unencrypted (yes/no)? yes  //提示是否保存密码
+
+	# svn ci -m "modify user"        //将本地修改的数据同步到服务器
+	]# svn update        //将服务器上新的数据同步到本地
+	# svn info     svn://192.168.2.100    //查看版本仓库基本信息
+	# svn log     svn://192.168.2.100    //查看版本仓库的日志
+	# svn mkdir subdir                //创建子目录
+	# svn rm timers.target            //使用svn删除文
+	# svn diff                     //查看所有文件的差异
+	# svn diff umount.target        //仅查看某一个文件的差异
+	# svn cat svn://192.168.2.100/reboot.target    //查看服务器文件的内容
+	 sed -i 'd' tmp.mount   //删除文件所有内容，但未提交
+	# svn revert tmp.mount   //还原tmp.mount文件
+	# svn update        //还原
+	# svn ci  -m  "xxx"	/提交代码
+	# svn merge -r7:2    tuned.service //将文件从版本7还原到版本2
+
+		svn help
+
+	使用Subversion协同工作
+	# svn --username tom --password 123456  co 	
+	svn://192.168.2.100/ code
+	修改不同的文件   # svn update
+	修改相同文件的不同行   
+	修改相同文件的相同行
+	
+	# svnadmin dump /var/svn/project > project.bak  //备份
+	# svnadmin create /var/svn/project2     //新建空仓库
+	# svnadmin load /var/svn/project2 < project.bak   //还原
+
+
+*** 制作nginx的RPM包
+	# yum -y install  rpm-build   安装rpm-build软件包
+	# rpmbuild -ba nginx.spec     //会报错，没有文件或目录
+	# ls /root/rpmbuild         //自动生成的目录结构
+	# cp nginx-1.12.2.tar.gz /root/rpmbuild/SOURCES/
+	   ）准备工作，将源码软件复制到SOURCES目录
+	# vim /root/rpmbuild/SPECS/nginx.spec
+		创建并修改SPEC配置文件
+	Name:nginx        
+	Version:1.12.2
+	Source0:nginx-1.12.2.tar.gz
+	./configure
+	%doc
+	/usr/local/nginx/*      //对哪些文件与目录打包
+
+	：使用配置文件创建RPM包
+	# yum -y install  gcc  pcre-devel zlib-devel openssl-devel
+	安装依赖软件包
+	# rpmbuild -ba /root/rpmbuild/SPECS/nginx.spec
+		rpmbuild创建RPM软件包
+	# ls /root/rpmbuild/RPMS/x86_64/nginx-1.12.2-10.x86_64.rpm
+	# rpm -qpi RPMS/x86_64/nginx-1.12.2-10.x86_64.rpm 
+	# rpm -qpl nginx-1.12.2-10.x86_64.rpm 
+
+	安装、卸载软件
+	# rpm -ivh RPMS/x86_64/nginx-1.12.2-10.x86_64.rpm 
+	# rpm -qa |grep nginx
+	
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,991 @@
+本地用户:/etc/passwd
+
+
+RHCSA     RHCE    RHCA
+  1           1         5                 8
+
+
+
+
+搭yum    必须要会的
+
+ifco
+cat /et(tab)/red(tab)-r(tab)
+#ls /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+#cat /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+
+ls /etc/redhat-release
+ls -l Alt  + .
+cat A + .
+ls -l /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+cat Alt + .
+ping 127.0.0.1
+
+
+ls /dev/cdrom
+ls -l /dev/cdrom
+
+
+mount /dev/cdrom  /nsd
+ls /nsd/
+ 
+ls /nsd/packages/
+unmont /nsd
+ls /nsd
+
+useradd zhangshan
+useradd dc
+ 
+cd ~dc      ~~~~~~  ~~~shift `   
+pwd
+
+
+
+ls -ld
+ls -l
+ls -lh 
+ls -lA
+
+
+
+du  -sh  /root
+ls  /etc/*tab
+ls  /boot/vm*
+ls  /etc/*.conf
+ 
+ls  /dev/tty?
+
+ls /dev/tty[1-3]
+ls /dev/ttty{1,3,7,9}
+
+ls /dev/tty{2[0-9]}
+ls /dev/tty{2?,30}
+
+alias hn="hostname"
+unalias hn
+mkdir -p /opt/aa/bb/cc/dd
+ls /opt/aa
+mkdir /root/abc  /opt/test01  /mnt/file
+
+
+rm -rf /root/abc   /opt/test01 /mnt/file
+mkdir
+touch
+
+
+cp  -r
+
+
+
+vim  /opt/haix.txt
+
+
+                      Admin03.txt        over
+
+
+
+
+444444444444444444444444444444444444444444444444444444444444
+rht-vmctl reset classroom
+rht-vmctl reset server
+rht-vmctl reset desktop
+
+
+[root@server0 ~]# rm -rf /etc/yum.repos.d/*en
+[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo
+name=
+baseurl=
+enabled=1
+gpgcheck=0
+#yum repolist
+
+root@server0 ~]# yum -y install sssd    #安装软件包
+root@server0 ~]# yum clean all       #清空Yum缓存
+[root@server0 ~]# yum  remove  gcc     #卸载软件包
+[root@server0 ~]# yum  search  ftp     #查询软件包信息
+
+                   !!!!!!!!!!!!!
+
+
+   虚拟机server
+
+ # wget http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel-3.10.0-123.1.2.el7.x86_64.rpm
+            
+
+ /etc/sysconfig/network-scripts/ifcfg-eth0  #网卡配置文件
+
+
+                Admin04.txt
+
+5555555555555555555555555555555555555555555555555555555555555555
+
+
+
+gpasswd -a   添加用户到组
+gpasswd -d  从组删除用户
+
+
+
+[root@server0 ~]# head  -1  /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+
+用户名:密码占位符:UID:基本组GID:用户描述信息:用户家目录:解器程序
+
+passwd：所有的身份验证令牌已经成功更新。
+
+非交互式设置密码
+– echo '密码'    |    passwd --stdin 用户名
+
+[root@server0 ~]# echo 123 | passwd --stdin nsd02
+
+[root@server0 ~]# echo 123456 | passwd --stdin nsd03
+
+
+usermod [选项]... 用户名
+
+• 常用命令选项
+– -u 用户id、-d 家目录路径、-s 登录Shell、-G 附加组
+
+
+userdel  [-r]  用户名   #连同家目录一并删除
+
+
+
+组基本信息存放在 /etc/group 文件
+
+[root@server0 ~]# grep stugrp /etc/group
+ stugrp:x:1303:
+
+ tar 集成备份工具
+– -c:创建归档
+– -x:释放归档
+– -f:指定归档文件名称
+– -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+– -t:显示归档中的文件清单
+– -C:指定释放的位置
+
+root@server0 ~]# systemctl restart chronyd  #重起服务
+[root@server0 ~]# systemctl enable chronyd  #开机自启动
+
+
+root@server0 ~]# crontab  -e  -u  root   #编写计划任务
+*  *  *  *  *   date >> /opt/time.txt
+
+[root@server0 ~]# crontab  -l  -u  root   #查看计划任务
+
+
+                   Admin05.txt
+
+
+
+66666666666666666666666666666666666666666666666666666666666666666
+
+
+
+-read   r      cat  less  head  tail
+-write  w          vim  重定向
+-execute  x       可以运行该文件
+
+-user  u
+-group g
+-other o
+   
+# chmod u-w /nsd01     #所有者去掉w权限
+# chmod g+w /nsd01     #所属组加上w权限
+# chmod o=--- /nsd01   #修改其他人权限
+
+# chown zhangsan /nsd03   #修改所有者
+# chown :root /nsd03   #修改所属组
+
+# mkdir /nsd06
+# chown :tarena /nsd06
+
+# ls -ld /nsd06/test02   #所属组会继承父目录
+
+getfacl 文档....
+– setfacl [-R] -m  u:用户名:权限类别   文档...
+– setfacl [-R] -m  g:组名:权限类别   文档...
+– setfacl [-R] -b  文档...      #清空所有的ACL策略
+– setfacl [-R] -x  文档...      #删除指定的ACL策略
+
+# setfacl -x u:lisi  /nsd08  #删除指定ACL
+# setfacl -b /nsd08   #清空所有的ACL
+
+本地用户：  /etc/passwd
+LDAP服务器：classroom.example.com
+
+
+ 1.安装sssd软件包  与LDAP服务器沟通
+  [root@server0 ~]# yum -y install sssd
+  [root@server0 ~]# rpm -q sssd
+
+
+查看服务端共享 
+root@server0 ~]# showmount -e classroom.example.com
+访问共享
+#mount  classroom.example.com:/home/guests   /mnt
+
+
+
+          Admin06.txt
+
+
+
+
+77777777777777777777777777777777777777777777777777777777777777777
+
+
+
+grep文件内容过滤
+grep 'root' /etc/passwd
+^root
+root$
+^$
+ -i 忽略大小写            -v 取反
+特殊的过滤条件
+         ^root   必须以root开头
+         root$   必须以root结尾
+                 ^$           匹配空行
+find 查找文档所在位置
+find     d   f   s     size k  M  G
+type 类型(f 文件   d 目录   l 快捷方式)
+-size +-大小   k M G     按大小查找
+  
+处理find查找的内容
+
+– find .. .. -exec  处理命令 {}    \;
+– 优势:以 {} 代替每一个结果,逐个处理,遇 \; 结束
+
+use 根据名称查找,忽略大小写
+– -iname
+
+# find /home/ -group student
+r group  maxdepth
+
+-mtime   +-天数
+
+  
+ls root        ls /   知道（root ,/）目录下有那些东西
+
+
+/uer/bin/mkdir    mkdir的程序，绝对路径
+
+
+1，会搭服务器
+2，优化`````````````大多数学员 的程度，范围
+3，安全
+
+自动化运维，大数据库--------两个方向，炒的比较火
+       运维+开发（云计算+开发）
+运维工程师～～～～～～云架构工程师
+学好运维，相当于学好了系统（基础，linux）。再向其他方向发展
+
+
+Set UID       Set GID   Sticky Bit
+
+
+                   Admin07.txt
+
+
+ (    [root@room9pc01 ~]# systemctl restart httpd
+         [root@room9pc01 ~]# firefox http://tmooc.cn)
+   从终端打开火狐浏览器
+
+nsd1805n_pm@tedu.cn 
+PM2017tarena
+
+
+
+`````````````````````````````` ```````````````````````````````````
+                            engineer
+                                  
+磁道、扇区（512字节）、TB  GB  MB 1000     Tib  Gib  Mib  1024
+格式化：赋予一种规则，数据在空间存放的规则
+MBR/msdos    
+#lsblk
+\\\\\\\\\\\\\\XFS         为大数据传输的到来
+mkfs.xfs
+blkid
+
+df  -h
+
+reboot   重启
+
+/etc/fstab   开机自动挂载
+defaults    （一大堆参数功能的）集和
+
+partprobe
+
+pv    vg   lv
+
+                                              逻辑卷的扩展，新人过去可能做的方面
+resize2fs
+xfs_growfs
+
+
+33333333333333333333333333333333333333333333333333333333333333
+
+  
+
+
+'{"runner":{"name":"activebackup"}}'
+
+‘man teamd.conf’可以列出命令的幫助配置信息
+/example   查找信息，n 下一個信息
+teamdctl team0 state 查看
+
+
+/var/www/html  默認文件存放路徑；   index.html默認文件的名字
+
+
+
+ISCDI共享存储默认端口：3260
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+/dev/cdrom
+mount    umount
+mkdir       -p
+cd
+useradd     /root   /home
+pwd
+ls  -l  -h  -d  -A
+du -sh
+*    ?
+[a-z]   {a,min,xy}
+alias
+rm     -r、-f
+mv
+touch
+cp
+rht-vmctl     reset  
+firewall-config
+rpm   -q    -ivh        (firefox,zip,gcc,java,vsftpd)
+rpm --import  /dvd/RPM-GPG-KEY-redhat-release
+DNS:域名解析，将域名解析为IP地址
+     /etc/yum.repos.d/*.repo
+[  dvd ]  name  baseurl   enabled   gpgcheck
+yum repolist    install  clean all  remove  search
+                          (sssd,httpd,gcc,ftp)
+wget
+reboot
+        vim  /etc/hostname
+cat
+ssh - X
+nmcli connection modify 'System eth0' ipv4.method  manual ipv4.addresses '172.25.0.100/24 172.25.0.254' connection.autoconnect  yes
+ cat  /etc/sysconfig/network-scrips/ifcfg-eth0
+ cat /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+
+nmcli connection up ''
+route   gateway
+vim  /etc/resolve.conf
+nslookup
+>              >>     /opt/ls.txt
+head   tail  cat  
+ifconfig  |  head -2
+bc
+UID    GID  
+root:x:0:0:root:/root:/bin/bash
+
+用户名:密码占位符:UID:基本组GID:用户描述信息:用户家目录:解器程序
+useradd   -u 用户id、-d 家目录路径、-s 解释器程序、-G 附加组
+grep
+id
+groupadd
+passwd ：所有的身份验证令牌已经成功更新
+命令行临时切换用户身份：   su  -  用户名
+ echo '密码'    |    passwd --stdin 用户名
+用户密码信息存放在 /etc/shadow 文件
+
+usermod  -u 用户id、-d 家目录路径、-s 登录Shell、-G 附加组
+userdel  [-r]  用户名   #连同家目录一并删除
+组基本信息存放在 /etc/group 文件
+stugrp:x:1303:   组名:组密码占位符:GID:组成员列表
+groupadd
+gpasswd  -a   -d
+groupdel 
+ tar 集成备份工具
+– -c:创建归档
+– -x:释放归档
+– -f:指定归档文件名称
+– -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+– -t:显示归档中的文件清单
+– -C:指定释放的位置
+NTP时间同步
+安装同步时间软件chrony       服务名：chronyd
+date -s "年-月-日  时:分:秒"
+
+cron计划任务           *  ,  -  /n
+软件包:cronie、crontabs
+• 系统服务:crond
+• 日志文件:/var/log/crond
+crontab -e [-u 用户名]
+chmod  归属关系+-=权限类别
+                                  Permission denied :权限不足
+chown [-R] 属主         文档...
+– chown [-R] :属组       文档...
+– chown [-R] 属主:属组  文档...
+        [-R]  递归修改归属关系
+Set GID                        g+s,#所属组会继承父目录
+
+acl
+
+getfacl 文档....
+– setfacl [-R] -m  u:用户名:权限类别   文档...
+– setfacl [-R] -m  g:组名:权限类别   文档...
+– setfacl [-R] -b  文档...      #清空所有的ACL策略
+– setfacl [-R] -x  文档...      #删除指定的ACL策略
+     .图形的配置工具authconfig-gtk软件
+NFS共享?   网络文件系统
+NFS服务器：classroom.example.com
+showmount -e 
+mount  classroom.example.com:/home/guests   /mnt
+umount  /mnt/
+grep文件内容过滤     grep  '字符串'    /路径/文本文件
+                -i  -v 
+           特殊的过滤条件
+         ^root   必须以root开头
+         root$   必须以root结尾
+                 ^$           匹配空行 
+
+ find   查询路径     条件
+-type 类型(f 文件   d 目录   l 快捷方式)
+   -name   -a  -size k M G   -user  -iname  -group  -mtime
+find .. .. -exec  处理命令 {}    \;
+– 优势:以 {} 代替每一个结果,逐个处理,遇 \; 结束
+
+Set UID可以让使用者具有文件属主的身份及部分权限  u+s
+Sticky Bit                o+t
+适用于开放w权限的目录,可以阻止用户滥用w写入权限(禁止操作别人的文档)
+
+              EEEEEE
+
+wc  -l
+lsblk   fdisk  mkfs.ext4,mkfs.xfs
+df -h
+开机自动挂载 /etc/fstab
+设备路径        挂载点       类型      参数          备份标记      检测顺序
+/dev/vdb1   /part1    ext4    defaults 0 0
+partprobe
+  1.查看所有的硬盘设备   lsblk
+   2.进行分区        fdisk        p,n,d,w
+   3.刷新分区        partprobe
+   4.进行格式化     mkfs.ext4  mkfs.xfs
+   5.查看是否有文件系统    blkid
+   6.完成挂载        mount   
+   7.书写/etc/fstab完成开机自动挂载
+   8.进行mount -a测试
+   9.查看是否挂载成功  df  -h
+
+LVM逻辑卷的管理
+物理卷（PV）     卷组（VG）     逻辑卷（LV）
+vgcreate 卷组名   分区路径
+lvcreate -L 大小    -n  逻辑卷名称     基于的卷组名
+lvextend -L 18G /dev/nsd/mylv
+ PE：卷组划分空间的单位    -l :指定PE个数
+vgdisplay nsd   #显示nsd卷组详细信息
+lvremove
+     
+规范Shell脚本的一般组成
+ • #! 环境声明 
+ • # 注释文本
+ • 可执行代码
+使用 | 管道操作     >  2>  &>
+黑洞设备：/dev/null
+ $变量名：调用变量储存的值
+read : 产生一个交互式问答, 
+  可以记录用户在键盘的输入，并且会将用户在键盘的输入，赋值给变量储存
+ $( )与反撇号  ` ` ： 将命令的输出结果，作为命令的参数
+
+[     ]  -e：判断文档是否存在，存在为真
+	-d：存在并且为目录为真
+	-f：存在并且为文件为真
+	-r：存在并且对其有读取权限为真
+	-w：存在并且对其有写入权限为真
+	-x：存在并且对其有执行权限为真
+  -gt:大于
+	-ge:大于等于   
+	-eq:等于         
+	-ne:不等于
+	-lt:小于
+	-le:小于等于
+==: 字符串相等为真
+   !=:字符串不相等为真
+
+ if  [条件测试];then
+               执行的语句01
+     else
+               执行的语句02
+    fi
+if多分支处理
+
+  if [条件测试1];then
+     命令序列xx
+
+  elif [条件测试2];then
+     命令序列yy
+
+  elif [条件测试3];then
+     命令序列aa
+
+  else
+      命令序列zz
+  fi
+
+for循环结构
+
+• 给定一批对象,反复执行类似的操作
+
+  for 变量名 in 值列表
+  do
+    命令序列
+  done
+
+SELinux安全机制
+enforcing(强制)、permissive(宽松)
+– disabled(彻底禁用)
+
+临时切换:setenforce 1|0
+– 固定配置:/etc/selinux/config 文件
+
+
+• 影响指定用户的 bash 解释环境
+– ~/.bashrc,每次开启 bash 终端时生效
+
+
+• 影响所有用户的 bash 解释环境
+– /etc/bashrc,每次开启 bash 终端时生效
+
+IPv6地址:  128个二进制组成  以 冒号 分隔8部分  最终用4个16进制数表示
+
+   每段内连续的前置 0 可省略、连续的多个 : 可简化为 ::
+server0 上的地址应该是 2003:ac18::305/64
+
+team,聚合连接(也称为链路聚合)
+– 由多块网卡(team-slave)一起组建而成的虚拟网卡,即“组队”
+
+– 作用:热备份(activebackup)连接冗余
+参考 man teamd.conf  # /example  全文搜索example
+team-slave   master
+nmcli connection 添加   类型    组队-奴隶
+  配置文件名 team0-1  网卡名为 eth2  主设备为  team0
+nmcli connection add  type team-slave 
+con-name team0-2 ifname  eth2  master team0
+删除的配置
+# nmcli connection delete team0-1 
+激活# nmcli connection up team0
+# ifconfig  eth1   down    #禁用网卡
+
+搭建基本Web服务    httpd    
+ 默认存放文件文件的路径：/var/www/html
+   默认文件文件的名字： index.html
+  html网页语言
+
+
+搭建基本FTP服务
+vsftpd软件
+
+firewall-cmd（命令）
+
+根据所在的网络场所区分,预设保护规则集 zone 区域
+  – public:仅允许访问本机的sshd、ping、dhcp服务
+  – trusted:允许任何访问
+  – block:阻塞任何来访请求，明确拒绝
+  – drop:丢弃任何来访的数据包，直接丢弃，节省资源
+ – 运行时(runtime)
+  – 永久(permanent
+firewall-cmd --get-default-zone   #查看默认区域
+ firewall-cmd --set-default-zone=block   #修改默认区域
+
+ firewall-cmd --zone=public --add-service=ftp
+# firewall-cmd --zone=public --list-all
+firewall-cmd --reload        #重新加载防火墙配置
+
+    http:超文本传输协议           默认的端口号：80
+         https:安全超文本传输协议   默认的端口号：443
+         DNS:域名解析                     默认的端口号：53
+         telnet：远程管理               默认的端口号：23
+         FTP：文件传输协议              默认的端口号：21
+         tftp：简单文件传输协议       默认的端口号：69
+         SMTP：邮件协议，发邮件      默认的端口号：25
+         pop3：邮件协议，收邮件      默认的端口号：110
+         SNMP：简单网络管理协议      默认的端口号：161
+
+Samba服务基础
+Samba用户 —— 专用来访问共享文件夹的验证用户
+ 添加用户:pdbedit -a 用户名
+– 查询用户:pdbedit -L [用户名]
+– 删除用户:pdbedit -x 用户名
+
+配置文件及参数
+• 修改 /etc/samba/smb.conf
+[global]
+//全局设置
+workgroup = 工作组名
+
+[自定共享名]
+path = 文件夹绝对路径
+
+getsebool -a | grep samba   #查看所有布尔值
+
+ # setsebool samba_export_all_ro on  #允许所有人只读访问samba
+
+samba-client(客户端软件)
+ smbclient -L  //172.25.0.11/  #列出共享
+.安装cifs-utils软件包（支持cifs协议）
+root@desktop0 ~]# yum -y install cifs-utils
+
+ mount  -a
+实现开机自动挂载
+[root@desktop0 ~]# vim /etc/fstab 
+
+ //172.25.0.11/devops  /mnt/nsd02   cifs 
+ defaults,user=chihiro,pass=123,_netdev 0 0
+
+iSCSI网络磁盘
+iqn名字的作用：
+– 用来识别 target 磁盘组,也用来识别客户机身份
+backstore,后端存储
+target,磁盘组
+lun,逻辑单元 
+安装软件包:targetcli
+
+iSCSI共享存储默认端口： 3260
+root@desktop0 ~]# yum -y install iscsi-initiator-utils
+[root@desktop0 ~]# vim /etc/iscsi/initiatorname.iscsi
+InitiatorName=iqn.2018-06.example.com:desktop0
+
+iscsid        
+daemon-reload
+man  iscsiadm
+iscsiadm --mode discoverydb --type sendtargets --portal 172.25.0.11 --discover
+
+
+
+
+MariaDB默认端口号：3306
+数据库主配置文件：/etc/my.cnf
+安装mariadb-server    mysql  
+show  databases; 
+为数据库管理员 账号修改密码
+mysqladmin -u root password '123'
+# mysql -u root -p123 nsd < users.sql
+                将users.sql的数据导入到nsd库中
+ 
+增(insert)    删(delete)      改(update)     查(select)
+
+desc base;   #查看表结构
+
+GRANT 权限列表  ON 数据库名.表名 TO 用户名@客户机地址
+grant select on  nsd.*  to  lisi@localhost 
+
+HTTP服务基础
+
+• 软件包:httpd
+• 系统服务:httpd
+• 提供的默认配置
+– Listen:监听地址:端口(80)
+– ServerName:本站点注册的DNS名称(空缺)
+– DocumentRoot:网页根目录(/var/www/html)
+– DirectoryIndex:起始页/首页文件名(index.html)
+ 
+/etc/httpd/conf/httpd.conf   #主配置文件
+– /etc/httpd/conf.d/*.conf     #调用配置文件
+
+虚拟Web主机
+– 由同一台服务器提供多个不同的Web站点
+
+区分方式
+– 基于域名的虚拟主机
+– 基于端口的虚拟主机
+– 基于IP地址的虚拟主机
+
+<VirtualHost  IP地址:端口>
+	  ServerName  此站点的DNS名称
+	  DocumentRoot  此站点的网页根目录
+     </VirtualHost>
+
+<Directory 目录的绝对路径>
+.. ..
+Require all denied|granted
+Require ip IP或网段地址 .. ..
+</Directory>
+
+客户端访问服务端:
+    1.服务本身的访问控制
+    2.防火墙的访问控制
+    3.本地目录访问控制
+  4.SELinux的访问控制
+
+
+静态网站的运行
+• 服务端的原始网页 = 浏览器访问到的网页
+– 由Web服务软件处理所有请求
+– 文本(txt/html)、图片(jpg/png)等静态资源
+
+动态网站的运行
+• 服务端的原始网页 ≠ 浏览器访问到的网页
+–  由Web服务软件接受请求,动态程序转后端模块处理
+– PHP网页、Python网页、JSP网页......
+1.部署Python的网页文件
+2.方便用户访问webinfo.wsgi网页文件
+Alias  /    /var/www/sina/webinfo.wsgi
+当客户端访问到网页文件根目录时,将/var/www/sina/webinfo.wsgi呈现
+3，翻译Python页面
+yum -y install mod_wsgi (解释Python页面软件
+
+WsgiScriptAlias /   /var/www/sina/webinfo.wsgi
+4.此虚拟webapp0.example.com主机侦听在端口8909
+5.SELinux限制所有非默认的端口开放 (布尔值   安全上下文值)
+# semanage  port  -l | grep  http
+# semanage  port  -a  -t  http_port_t  -p tcp 8909
+    -a:添加     -t:类型    -p:协议
+
+
+部署安全的Web服务器,端口默认:443
+
+.安装软件包,支持安全Web服务器
+[root@server0 ~]# yum -y install  mod_ssl
+cd /etc/pki/CA/certs/
+cd /etc/pki/CA/private/
+5.修改配置文件/etc/httpd/conf.d/ssl.conf
+
+基础邮件服务
+
+.修改配置文件/etc/postfix/main.cf
+mail 发信操作
+– mail -s '邮件主题'     -r  发件人      收件人
+
+• mail 收信操作
+– mail [-u 用户名]
+
+
+parted分区命令,可以划分GPT分区模式
+parted /dev/vdb   mktable gpt  print  mkpart   quit
+
+交换空间,虚拟内存
+ mkswap  /dev/vdb1
+ swapon  /dev/vdb1 
+swapon -s   swapoff     swapon -a
+
+开机自动启用交换分区
+[root@server0 ~]# vim /etc/fstab 
+/dev/vdb1  swap  swap  defaults  0 0
+/dev/vdb2  swap  swap  defaults  0 0
+
+
+配置NFS共享, Linux与Linux之间的共享
+
+所需软件包:nfs-utils
+• 系统服务:nfs-server
+
+.修改配置文件/etc/exports
+
+
+虚拟机desktop0
+客户端访问:
+showmount -e 172.25.0.11
+
+3.实现开机自动挂载
+[root@desktop0 ~]# vim /etc/fstab 
+172.25.0.11:/test  /mnt/nfs  nfs defaults,_netdev 0 0
+
+
+vim /root/.bashrc
+man hier
+FTP vsftpd
+
+
+Admin   Engineer  两个课件的案例，全部背下来
+
+RHCSA  初级认证     RHCE 中级认证    RHCA （5）
+
+
+
+配置文件（linux学习的难度，重点）
+
+
+
+
+挂载 /dev/cdrom   /dvd
+软件包 仓库清单文件/dvd/Packages/
+软件包依赖关系
+
+
+
+
+
+永久别名的配置文件/root/.bashrc(系统级配置文件)
+  /home/student/.bashrc       /etc/bashrc(可以改用户密码)
+ 
+
+书写客户端配置文件/etc/yum.repos.d/*.repo
+
+用户基本信息存放在 /etc/passwd 文件（户口本
+ 用户密码信息存放在 /etc/shadow 文件
+ 组基本信息存放在 /etc/group 文件
+
+永久主机名存放文件 /etc/hostname 
+ 
+#网卡配置文件/etc/sysconfig/network-scripts/ifcfg-eth0 
+
+永久DNS服务器地址/etc/resolv.conf 
+
+修改时间同步的主配置文件/etc/chrony.conf
+
+开机自动挂载 /etc/fstab
+Samba服务基础  修改 /etc/samba/smb.conf
+SELinux安全机制 固定配置:/etc/selinux/config 文件
+iSCSI/客户机连接并当成本地磁盘使用etc/iscsi/initiatorname.iscsi
+
+HTTP服务基础修改配置文件/etc/httpd/conf/httpd.conf 
+ #调用配置文件/etc/httpd/conf.d/*.conf 
+   
+基础邮件  修改配置文件/etc/postfix/main.cf
+
+NFS共享 修改配置文件/etc/exports
+
+调整历史命令的数量    /etc/profile
+
+系统   /etc/redhat-release
+
+ DNS主配置文件:/etc/named.conf     设置本机负责解析的域名
+• 地址库文件:/var/named/         主机名与IP地址对应关系
+
+ vim 默认配置文件   ~/.vimrc  
+
+
+
+DocumentRoot:网页根目录(/var/www/html)
+
+
+
+日志文件:/var/log/crond
+查看翻译官配置文件cat /etc/shells
+
+
+系统的日志文件内容/var/log
+默认存放页面文件的路径：/var/www/html
+默认vsftpd共享数据的路径：/var/ftp
+
+/var/log/messages   记录内核消息、各种服务的公共消息
+ /var/log/dmesg 		记录系统启动过程的各种消息
+ /var/log/cron       记录与cron计划任务相关的消息
+ /var/log/maillog    记录邮件收发相关的消息
+ /var/log/secure     记录与访问限制相关的安全消息
+
+部署TFTP服务     默认共享的位置:/var/lib/tftpboot
+
+
+网络用户家目录(本地没有，在服务器上)/home/guests
+
+黑洞设备：/dev/null
+
+
+
+
+
+/usr/bin/mkdir
+/usr/bin/hostname
+命令在/usr/bin里面
+#which  #搜索命令所对应的执行程序
+
+
+
+常见服务：
+         http:    80超文本传输协议           默认的端口号：80
+         https:   443安全超文本传输协议   默认的端口号：443
+         DNS:     53域名解析                     默认的端口号：53
+         telnet： 23远程管理               默认的端口号：23
+         FTP：    21文件传输协议              默认的端口号：21
+         tftp：   69简单文件传输协议       默认的端口号：69
+         SMTP：   25邮件协议，发邮件      默认的端口号：25
+         pop3：   110邮件协议，收邮件      默认的端口号：110
+         SNMP：   161简单网络管理协议      默认的端口号：161
+
+
+  端口号：标识服务，标识程序
+
+
+[root@svr7 ~]# man hier
+
+ /boot 		  存放系统引导必需的文件,包括内核、启动配置
+ /bin、/sbin         存放各种命令程序
+ /dev                存放硬盘、键盘、鼠标、光驱等各种设备文件
+ /etc 		  存放Linux系统及各种程序的配置文件
+ /root、/home/用户名  分别是管理员root、普通用户的默认家目录
+ /var 		  存放日志文件、邮箱目录等经常变化的文件
+ /proc 		  存放内存中的映射数据,不占用磁盘
+ /tmp 		  存放系统运行过程中使用的一些临时文件
+
+
+
+
+传递数据的服务，WEB  FTP
+
+rpm -ivh装包简单，不能解决依赖关系
+yum -y install  可以解决以来关系，不过装包前需要先搭建yum仓库
+
+yum info vsftpd  查看软件包基本信息
+systemctl status ..查看服务是否启动
+
+ping -c 2 172.25.0.11   ping两次
+
+vimdiff  对比
+elinks -dump
+curl  
+
+systemctl restart sshd
+
+ls -Z(查看文件的标识)    selinux 安全上下文标识
+
+man hier     查看根目录文件系统描述
+
+virsh start A   开启虚拟机A
+virsh destroy A  毁灭虚拟机A
+virt-manager    打开虚拟系统管理其
+virsh list --all   列出所有的虚拟机
+virsh list         列出正在运行的虚拟机
+virsh console A  连接虚拟机   Ctrl + ] 退出
+
+yum provides  */guestmount
+yum -y reinstart ..   重新装包（rein）
+
+mkdir -m 2777 /opt/1.txt   创建一个新目录时，可以直接赋予权限
+
+fdisk -l /dev/vdb 看   dos分区类型    如果发现为gpt类型，用gdisk
+
+nmcli device status
+
+
+
+:%s  /192.168.1/192.168.4/g    #全文替换
+
+
+yum-config-manager --add http://classroom.example.com/pub/..
+
+
+
+echo "aa" | md5sum   数值转换   ？  md5sum
+
+
+head halt   头部信息  报头
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

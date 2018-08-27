@@ -1,0 +1,364 @@
+     
+         : windows     linux    apple系统    手机系统
+
+ 工作内容	服务的架构    shell语言、html语言、python语言
+   九大服务：
+        http:    80   超文本传输协议           
+        FTP：    21   文件传输协议           
+	  https:  443  安全超文本传输协议  
+        DNS:     53   域名解析               
+        tftp：   69   简单文件传输协议 
+        telnet： 23   远程管理  （不加密，路由器交换机） 我们用ssh    
+        SMTP：   25   邮件协议，发邮件     
+        pop3：   110  邮件协议，收邮件     
+        SNMP：   161  简单网络管理协议     
+
+
+
+一，  NTP时间同步
+   1.安装同步时间软件chrony（与服务端去沟通，确保时间的同步）
+   2.修改主配置文件/etc/chrony.conf
+   3.重起服务刷新配置    服务名：chronyd
+
+
+二， cron计划任务       编辑:crontab -e [-u 用户名]
+    软件包:cronie、crontabs
+    # crontab  -e  -u  root   #编写计划任务 
+    # crontab  -l  -u  root   #查看计划任务
+
+
+三， LDAP服务器： 网络用户认证
+         本地用户：  /etc/passwd
+       LDAP服务器：classroom.example.com
+
+ 1.安装sssd软件包  与LDAP服务器沟通        sssd软件包 
+    图形的配置工具authconfig-gtk软件    authconfig-gtk软件
+ 3.运行图形的工具进行配置    # authconfig-gtk 
+ 4.重起sssd服务验证
+
+
+四， NFS共享           NFS服务器：classroom.example.com
+  
+   1.查看服务端共享
+  # showmount -e classroom.example.com
+   2.访问共享,挂载到本地
+  # mount classroom.example.com:/home/guests/  /home/guests/
+
+二十，搭建基本的NFS共享      Linux与Linux之间的共享
+      1.安装nfs-utils包
+      2.修改配置文件/etc/exports        ..   *(ro)
+      3.重起nfs-server服务
+虚拟机desktop0
+     1.查看服务端NFS共享     showmount -e ....
+     2.挂载访问    mkdir  mount    df -h
+     3.实现开机自动挂载  /etc/fstab  ..  .  nfs defaults,_netdev . .
+     umount        df -h      mount -a
+
+
+
+$五， MBR/msdos    传统的分区
+   1,分区lsblk    fdisk  
+   2，格式化 mkfs.ext4(.xfs -f)       blkid
+   3，挂载使用  mount   df -h
+   4，开机自动挂载    /etc/fstab
+  5，综合分区  fdisk  partprobe  lsblk
+
+  (五，LVM逻辑卷的管理
+  1，创建逻辑卷  vgcreate    lvcreate     pvs   vgs    
+     mkfs.ext4(.xfs)  vim  /etc/fstab    mount -a  df -h
+
+  2,逻辑卷的扩展  lvextend   resize2fs (xfs_growfs)  df -h
+    vgextend  lvextend   resize2fs (xfs_growfs)  df -h
+      
+  3,逻辑卷的缩减  e2fsck -f 、、   resize2fs 、、 10G
+     lvreduce -L 10G 、、        lvs
+
+  4，PE：卷组划分空间的单位     -l :指定PE个数 
+      vgdisplay      vgchange -s   lvcreate -l 50 -n lvtest02 
+
+  5,逻辑卷的删除  ：先删除逻辑卷,再删除卷组，最后删除物理卷
+                      否则会形成许多的扇形磁盘碎片，对硬盘造成损伤
+	umount /lvm       lvremove /dev/nsd/mylv    
+
+
+六，Shell脚本  ：一个可以执行的文件，可以实现某种功能
+    .#！  .#  .      >  2> &>           &> /dev/null 
+     引用变量值:$变量名  a=rhel  echo $a    echo ${a}7
+     $[ ]        $( ) 、` `   RANDOM    USER
+      $n,n为序号     read -p     $#  $*  $?
+    [ -e,-d,-f,-r,-w,-x ] [ -gt,-ge,-eq,-ne,-lt,-le ]
+    [ ==,!= ]  if [ ] ;then ..     else  ..  fi
+    if [];then.. elif [ ];then.. elif [ ];then .else . fi
+    for * in *** do .. done
+     
+
+七，SELinux安全机制
+   enforcing   、permissive  、disabled
+  setenforce 1|0   vim /etc/selinux/config
+
+
+八，team,聚合连接(也称为链路聚合)
+  1，创建虚拟网卡
+ nmcli connection add type team con-name team0 ifname team0 autoconnect yes config '{"runner": {"name": "activebackup"}}'
+ 2,添加成员    add  type  team-slave    con-name   ifname master
+ 3,配置ip地质    team0
+ 4，激活所有配置   up
+
+
+九，搭建基本Web服务
+ 1，安装 httpd   
+ 2，重起服务
+ 3，书写一个页面文件  /var/www/html  index.html
+ 
+
+十，搭建基本FTP服务   vsftpd
+
+
+十一，RHEL7的防火墙体系
+  #查看默认区域   get  #修改默认区域 set  #服务的添加   add-service
+  permanent     reload      list-all
+   -从客户机访问 端口1 的请求,自动映射到本机 端口2
+ # firewall-cmd --permanent --zone=public 
+--add-forward-port=port=5423:proto=tcp:toport=80
+ --remove-  删除                --reload  --list-all
+
+
+十二，Samba服务基础
+    用途:为客户机提供共享使用的文件夹 (跨平台的共享,Windows与Linux）
+   1,安装samba软件
+   2，建立samba共享帐号    useradd -s /sbin/nologin  pdbedit -a
+   3,修改 /etc/samba/smb.conf主配置文件
+   4，重起smb服务
+   5， SELinux策略修改，布尔值功能的开关 getsebool -a   setsebool
+
+虚拟机desktop0
+    	通过挂载，更加科学方便的访问Samba共享
+	1.安装cifs-utils软件包（支持cifs协议）
+	2.进行挂载    mkdir      mount -o user=,pass= //172.25.0.11/common  /mnt/nsd01      df -h
+	3.开机自动挂载samba共享/etc/fstab      }
+
+搭建读写的Samba共享     服务端：虚拟机Server0
+  1.修改配置文件/etc/samba/smb.conf        write list = .
+  3.修改SELinux策略    # setsebool samba_export_all_rw on
+  4.赋予chihiro本地目录权限  setfacl
+
+
+$十三，iSCSI网络磁盘   虚拟机server0，构建iSCSI共享存储服务端
+  $，进行分区
+  1.安装软件包:targetcli
+  2,运行 targetcli
+  3.建立后端存储  backstores/block  create  name=  dev=
+  4,建立target,磁盘组 iscsi/ create  iqn.yyyy-mm.倒序域名:自定义标识
+  5,lun,关联    tpg1  luns create  /backstores/block/nsd 
+  6.开启服务监听的端口，开启监听的本机IP地址  portals  本机IP
+  7.配置访问控制ACL，设置客户端声称名字  acls   iqn...:客户端声称名字
+  8.重起服务   restart   enable
+
+客户端：虚拟机desktop0
+1.安装软件包  iscsi-initiator-utils     #iscsi启动软件包
+2.修改配置文件，指定客户端声称的名字  InitiatorName=
+3.重起iscsid服务，仅仅就是刷新iqn名称   daemon-reload
+4.发现服务端共享存储 参考：man  iscsiadm
+5.重起iscsi服务,将共享存储加载到本机    lsblk   #可以看到sda
+
+
+十四，数据库服务基础
+    1.安装mariadb-server     启动mariadb服务
+    2，使用数据库mysql  show databases; creat database .;  drop .;
+    3,为数据库管理员 账号修改密码  mysqladmin -u .  password .
+    # mysql -u root -p        # mysql -u root -p123   #非交互式 
+    4,导入数据库的数据  # wget
+    # mysql -u root -p123 nsd < users.sql 
+      将users.sql的数据导入到nsd库中
+    5,表格操作   增(insert)    删(delete)      改(update)     查(select)
+    6,数据库授权   除了root用户,授权用户**查询，用户密码
+     – GRANT 权限列表  ON 数据库名.表名 TO 用户名@客户机地址
+       IDENTIFIED BY '密码';
+    7，多表查询，有条件的查询，表记录的删出及增加   base
+                   flush privileges;   #刷新user表记录 
+
+
+十五，HTTP服务基础      WEB
+   1.安装httpd软件     书写网页文件  /var/www/html/index.html 重起
+  2，ServerName:本站点注册的DNS名称 (空缺)  Server0.example.com
+     修改配置文件  /etc/httpd/conf/httpd.conf     重起httpd服务
+  3，DocumentRoot:网页文件根目录(默认为/var/www/html
+    创建目录   书写文件  修改配置文件  /var/www/myweb   重起
+   4,重起
+ #虚拟Web主机       基于‘域名    端口   IP’ 的虚拟主机（区分方式）
+     vim   /etc/httpd/conf.d/*.conf     #调用配置文件
+ 为每个虚拟站点添加配置,容器类型的配置
+	<VirtualHost  IP地址:端口>
+	  ServerName  此站点的DNS名称
+	  DocumentRoot  此站点的网页根目录
+      </VirtualHost>
+   
+ #访问控制
+	<Directory 目录的绝对路径>
+	.. ..
+	Require all denied|granted
+	Require ip IP或网段地址 .. ..
+	</Directory>
+   5)修改SELinux策略,安全上下文值(标签值:标识作用)
+      ls -Zd ..       chcon -R --reference=..  ..
+ 
+ *客户端访问服务端: 需‘防火墙  服务本身  本地目录  SElinux’ 的访问控制权限
+   
+ #部署动态网站         由Web服务软件接受请求,动态程序转后端模块处理
+1.部署Python的网页文件   cd    wget      ..../webinfo.wsgi
+2.方便用户访问webinfo.wsgi网页文件     Alias / 
+3.翻译Python页面    mod_wsgi       WsgiScriptAlias  /
+4.此虚拟webapp0.example.com主机侦听在端口8909      listen
+5.SELinux限制所有非默认的端口开放 (布尔值   安全上下文值)
+  semanage port -l ...       semanage port -a -t .. -p .  .
+6.重起httpd服务 
+
+
+*十六，部署安全的Web服务器,端口默认:443
+1.安装软件包,支持安全Web服务器          mod_ssl
+2.部署网站证书(营业执照)      cd    wget  certs/server0.crt
+3.部署根证书(公安局信息)      certs/example-ca.crt
+4.部署解密的私钥       private/server0.key
+5.修改配置文件/etc/httpd/conf.d/ssl.conf
+      :set nu   59  60  100  107  122  
+6.重起httpd服务
+7.验证:
+
+
+十七，基础邮件服务          DNS服务器: classroom.example.com
+     1.创建两个邮箱帐号     useradd
+     2.安装邮件功能的软件    postfix
+     3.修改配置文件/etc/postfix/main.cf    :set nu 99  116  164
+     4.重起服务
+     *收发邮件 mail -s .. -r . .      mail -u .       quit
+ 
+
+十八，GPT分区模式  parted分区命令,可以划分
+    GPT分区模式:    128个主分区       18EB容量 1EB=1000PB 1PB=1000TB 
+   parted    mktable gpt    print     mkpart    unit GB  quit
+
+*十九，交换空间，虚拟内存
+     1.格式化, 交换文件系统      mkswap
+     2.启用交换分区      swapon 
+     3.查看交换空间组成的成员      swapon -s    swapoff
+     5.开机自动启用交换分区    /etc/fstab     swapon -a
+
+
+二十， 源码编译安装    源码包:非常的灵活,可以指定安装的位置及功能
+     1，安装开发工具gcc与make
+    2.tar进行解包
+     3，配置 ./configure ,进行指定可以指定安装的位置及功能
+     4，编译  make
+     5，安装 make install
+
+
+二十一，DNS解析            根据注册的域名查找其对应的IP地址systemctl 
+       1.安装软件 bind  bind-chroot
+       2.修改配置文件/etc/named.conf
+       3.建立地址库文件/var/named/tedu.cn.zone
+       4.重起服务
+ 
+   多区域的DNS服务器     zone
+
+    特殊的解析记录
+        1.重复解析记录,可以达到轮询
+        2.泛域名解析        *
+        3.有规律的泛域名解析       $GENERATE:产生连续的数字
+        4.解析记录的别名     CNAME
+
+    DNS子域授权
+         1.安装软件bind  bind-chroot
+         2.修改配置文件/etc/named.conf
+         3.建立地址库文件/var/named/bj.qq.com.zone
+         4.重起服务
+         5.验证          nslookup
+
+递归解析: DNS服务器与其他DNS服务器交互,最终将答案带回来的过程
+迭代解析: DNS服务器与其他DNS服务器交互
+
+缓存DNS,加快解析速度
+            方式1:全局转发
+                1.查看真机DNS服务器ip地址       /etc/resolv.conf
+                2.真机搭建Yum仓库     mount   /iso/CentOS-.
+                3.真机搭建缓存DNS服务器,修改配置文件   书写真机的DNS地址
+                4.虚拟机A:验证    echo nameserver ..      nslookup
+       虚拟机A
+             1.安装一个可以提供域名解析的软件  bind-chroot    bind
+             2.修改主配置文件/etc/named.conf    
+             3. 建立地址库文件/var/named/sina.com.zone   -p:权限不变进行拷贝
+             4,客户端：虚拟机B 验证DNS解析
+
+    方式2:根域迭代
+
+DNS分离解析
+	   1.由上到下依次匹配，  匹配即停止
+           2.使用view时，所有的客户端都必须在分类中
+ 	   3.所有的zone都必须在view中
+ 	   4.每一个view中的zone必须相同
+
+
+  #二十一，DHCP服务构建      用来简化主机地址分配管理
+   DHCP概述及原理,整个过程通过广播进行,先到先得(一个网路中,不能有多台)
+   	1.安装软件包          dhcp
+        2.修改配置文件/etc/dhcp/dhcpd.conf 
+             :r  /usr/share/doc/dhcp*/dhcpd.conf.example
+        3.重起dhcpd服务
+
+二十二，PXE网络装机
+  PXE组件及过程分析
+  • 需要哪些服务组件?
+  – DHCP服务,分配IP地址、定位引导程序
+  – TFTP服务,提供引导程序下载
+  – HTTP服务,提供yum安装源
+	
+	A搭建DHCP服务,设置网络装机配置
+	1.修改配置文件     2.重起dhcpd服务
+
+   	B部署TFTP服          
+       tftp    重起     3.部署pxelinux.0文件   /var/lib/tftpboot/
+       4.部署菜单文件       5.部署 图形模块 与  背景图片
+       6.部署 启动内核 与  驱动程序  vmlinuz(启动内核)  initrd.img(驱动程序)
+       7.修改菜单文件内容
+
+       C搭建Web服务,共享光盘所有内容
+      1安装httpd软件        2.重起httpd服务    3建立目录/var/www/html/rhel7
+      4.挂载光驱设备        5.测试访问
+
+       D生成应答文件,实现无人值守安装
+ 	1.安装一个图形system-config-kickstart的工具,生成应答文件
+	2.运行system-config-kickstar
+	3.共享ks.cfg文件
+	4.修改菜单文件,指定ks.cfg文件
+
+
+二十三，rsync+SSH远程同步
+	ssh无密码验证
+	1.生成公钥 私钥     ssh-keygen
+	2.传递公钥 到对方机器  ssh-copy-id ..
+	3.验证    rsync -avz --delete /opt/ ..
+
+	部署inotify-tools工具软件,监控目录内容变化
+真机的操作:  # scp /root/桌面/tools.tar.gz  ..
+虚拟机A: 1.安装gcc与make开发工具    2.tar解包
+	3.运行./configure进行配置  4.执行make 编译
+	5.执行make  install 安装
+	6.验证   ls /usr/local/bin/inotifywait
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
