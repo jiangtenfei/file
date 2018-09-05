@@ -1,0 +1,2028 @@
+
+
+
+	1：Linux基本防护措施
+	chage命令的语法格式：
+	chage –l    账户名称          //查看账户信息
+	chage –E 时间 账户名称       //修改账户有效期
+	# useradd zhangsan
+	#echo "1" | passwd --stdin zhangsan
+	# chage -E 2015-05-15 zhangsan
+     使用chage命令将用户zhangsan的账户设为当前已失效（过去的某个时间）：
+	# chage -E 2019-12-31 zhangsan              //修改失效日期
+	# chage -l zhangsan                        //查看账户年龄信息
+	# cat /etc/login.defs    定义默认有效期
+	PASS_MAX_DAYS    99999         //密码最长有效期
+	PASS_MIN_DAYS    0        //密码最短有效期
+	PASS_MIN_LEN    5           //密码最短长度
+	PASS_WARN_AGE    7        //密码过期前几天提示警告信息
+	UID_MIN        1000      //UID最小值
+	UID_MAX        60000  //UID最大值
+	# passwd -l zhangsan      //锁定用户账号lock
+	# passwd -S zhangsan      //查看状态status
+	# passwd -u zhangsan      //解锁用户账号
+	修改tty登录的提示信息，隐藏系统版本
+	# cat /etc/issue      //确认原始文件
+	# vim /etc/issue         //修改文件内容
+	Windows Server 2012 Enterprise R2
+	NT 6.2 Hybrid
+	：对于操作系统来说，文件系统也可以通过添加额外属性来提高性能与安全性。
+	/dev/vda1   /boot    xfs   defaults,noexec   0  0
+	noexec属性可以让分区下的所有程序都不可执行，包括病毒与木马
+	dev/vda3   /home    xfs   defaults,noatime  0  0
+	noatime让分区下的所有文件都不再更新atime时间，
+	atime时间为文件的访问时间
+	nomtime   m---modify     ll --mtime
+	noatime   a---access	ll --atime
+	noctime   c---status     ll --ctime
+
+	# chattr +i  文件名     //锁定文件（无法修改、删除等）
+	# chattr -i  文件名     //解锁文件
+	# chattr +a  文件名      //锁定后文件仅可追加
+	# chattr -a  文件名      //解锁文件
+	# lsattr 文件名         //查看文件特殊属性
+
+	sudo机制分配管理操作权限
+	# su - zhangsan  -c "touch /tmp/test.txt"   
+	     //管理员切换普通用户  -c  非交互，直接执行  创建
+
+	# vim /etc/sudoers       //修改文件后，需要使用wq强制保存
+	softadm    ALL=(ALL)   /usr/bin/systemctl         
+	//授权softadm以root身份执行systemctl命令（ALL包括root）
+	$ sudo -l
+	[sudo] password for softadm:     //输入softadm的口令
+	$ systemctl start httpd     //不用sudo时启动服务失败
+	$ sudo systemctl restart httpd   //通过sudo启动服务成功
+	useradm ALL=(ALL)  /usr/bin/passwd,!/usr/bin/passwd root,
+	/usr/sbin/user*,!/usr/sbin/user* * root
+	允许用户useradm通过sudo方式添加/删除/修改除root以外的用户账号
+	# usermod -a -G wheel zengye
+	允许wheel组成员以特权执行所有命令
+	%wheel ALL=(ALL)  ALL
+	用户 zengye 可以在该主机上运行以下命令：
+	(root) /bin/*
+	Defaults  logfile="/var/log/sudo"
+	为sudo机制启用日志记录，以便跟踪sudo执行操作
+	# vim /etc/ssh/sshd_config
+	Protocol 2        //SSH协议
+	PermitRootLogin no   //禁止root用户登录
+	PermitEmptyPasswords no  //禁止密码为空的用户登录
+	UseDNS  no    //不解析客户机地址
+	LoginGraceTime  1m       //登录限时
+	MaxAuthTries  3       //每连接最多认证次数
+	# systemctl restart sshd
+	# passwd -d kate   //清空用户口令
+
+	针对SSH访问采用仅允许的策略，未明确列出的用户一概拒绝登录
+	# vim /etc/ssh/sshd_config
+	AllowUsers zhangsan tom useradm@192.168.4.0/24    
+	        		//定义账户白名单
+	##DenyUsers  USER1  USER2           //定义账户黑名单
+	##DenyGroups  GROUP1 GROUP2          //定义组黑名单
+	##AllowGroups  GROUP1 GROUP2       //定义组白名单
+
+	实现密钥对验证登录（私钥口令）、免密码登入
+	$ ssh-keygen
+	Enter passphrase (empty for no passphrase):  
+							//直接回车将口令设为空
+	Enter same passphrase again:      //再次回车确认
+	$ ls -lh ~/.ssh/id_rsa*    //确认密钥对文件
+	$ ssh-copy-id root@192.168.4.5
+	以用户root登入客户机，使用ssh-copy-id命令将自己的公钥部署到服务器：
+	*authorized_keys  传送到对方机器的公钥
+	*id_rsa.pub   密钥生成时自动生成的公钥，=authorized_keys重命名
+	*id_rsa 	密钥
+	 ～/.ssh/	对应用户家目录下/.ssh/    公、密钥位置
+	没有ssh-copy-id  命令时，传递公钥就scp 然后重命名就可以了
+	
+	# vim /etc/ssh/sshd_config   确定密钥使用正常后，禁用密码验证
+	PasswordAuthentication no   //将此行yes改成no
+
+	：SELinux安全防护
+	vim /etc/selinux/config
+	enforcing  强制模式
+	permissive  警告模式，宽松
+	disable     禁用 selinux  不启用
+	
+	targeted   //保护策略为保护主要的网络服务安全
+	（mls     多层安全机制 须修改安全上下文....
+	minimum  修改有针对性的政策，只有选定的进程受到保护）
+	
+	yum -y install vsftpd  
+	vim /etc/vsftpd/vsftpd.conf   仅仅看一下
+	anonymous_enable=YES          //开启匿名访问
+	anon_upload_enable=YES          //允许上传文件
+	anon_mkdir_write_enable=YES        //允许上传目录
+	# systemctl start vsftpd     //启动服务
+	由root用户创建两个测试压缩包，一个直接建立到/var/ftp/目录下，
+	另一个先在/root/下建立，然后移动至/var/ftp/目录。
+	 ls -Z	查看，安全标签不一样   cp 会继承安全标签， 用mv
+	# chcon -t public_content_t /var/ftp/d2.tar.gz
+		修改上下文值，实现可以访问    selinux  enforcing
+	上例中的chcon操作可替换为（效果相同）：
+	# restorecon /var/ftp/log2.tar.gz
+	或者
+# chcon --reference=/var/ftp/log1.tar.gz /var/ftp/log2.tar.gz
+
+
+	#visodu   =  vim /etc/sudoers  强制保存
+
+
+
+
+
+
+****** chage   账户
+	passwd 
+	chattr 、lsatter
+	su   sudo     visudo =vim /etc/sudoers
+	ssh  sshd 黑白名单，远程权限  密钥验证
+	ssh-keygen     whoami
+	selinux   sestatus   chcon  
+
+
+
+
+22222222222222222222222222222222222222222222222222222222222222
+22222222222222222222222222222222222222222222222222222222222222
+22222222222222222222222222222222222222222222222222222222222222
+
+
+
+
+
+
+斯诺登事件   ------> 加密与解密   -----> 事件的典型示例
+
+hash值 哈希值是一段数据唯一且极其紧凑的数值表示形式
+作用  确保数据完整性算法
+
+md5sum  计算一个文件的哈希值  SHA256  SHA512
+  #文件内容一致，则校验和不变  移动，重命名都不影响
+
+
+vimdiff  校验文件.打开两份文件
+
+
+reset 重置
+
+
+	
+	：检查文件的MD5校验和
+	#md5sum  a.txt         
+	
+	yum -y install gnupg2  安装软件
+	GnuPG是非常流行的加密软件，支持所有常见加密算法，并且开源免费使用。
+
+	gpg -c a.txt   对称加密
+	gpg -d a.txt.gpg > b.txt  解密
+	
+	gpg --gen-key    创建密钥对   默认算法RSA
+
+	gpg --list-keys   查看公钥环
+
+	gpg -a --export tommy >tom.pub  #导出
+	--export的作用是导出密钥，-a的作用是导出的密钥存储为ASCII格式
+	ASCII 加密格式，键盘可以敲出来的字符，看起来整齐一些
+	
+	gpg --import /tmp/tom.pub   导入接受的公钥信息
+
+	y# gpg -e -r tommy love.txt #使用公钥 tommy 加密数据 love.txt
+			# -e 使用密钥加密  -r 跟密钥
+	x# gpg -d love.txt.gpg >love.txt  #tommy 以自己的密钥解密文件
+			
+**** gpg  -c -e -d    -a   -r
+	--gen-key  --list-keys  --import  --export 
+
+
+	
+	*GPG的签名机制 ，私钥签名  公钥验证
+	tar -zcf log.tar  /var/log/   建立测试文件
+	gpg -b log.tar       #创建分离式数字签名
+	scp log.tar*  ip:/root/  将签名文件和签名传给proxy
+
+	gpg --verify log.tar.sig log.tar   验证签名
+	
+	
+	*AIDE做入侵检测
+	yum -y install aide
+	cat /etc/aide.conf
+	@@define DBDIR /var/lib/aide     //数据库目录
+	@@define LOGDIR /var/log/aide     //日志目录
+	database_out=file:@@{DBDIR}/aide.db.new.gz  //数据库文件名
+
+	sed -i "98,1000 s/^/#/" /etc/aide.conf   #98行以后加注释
+	sed -i "98a  /root/ DATAONLY"    仅保留/root目录 ，做检验
+	
+	aide  --init   # 入侵前对数据进行校验，生成初始化数据库
+	cd /var/lib/aide/
+	mv aide.db.new.gz aide.db.gz   对生成的数据文件，改名
+	aide --check   #检查哪些数据发生了变化
+
+	
+	：扫描与抓包分析       NMAP 扫描器
+	yum -y install nmap
+	nmap -sP 防火墙开着，也可以扫描   mac地址  网段
+	   -n  不执行DNS解析
+	# nmap  -n  -sP  192.168.4.0/24    可以ping网段
+	//常用的扫描类型
+	// -sS，TCP SYN扫描（半开）
+	// -sT，TCP 连接扫描（全开）
+	// -sU，UDP扫描
+	// -sP，ICMP扫描
+	// -A，目标系统全面分析
+
+	# nmap -p 21-22 192.168.4.0/24
+	检查192.168.4.0/24网段内哪些主机开启了FTP、SSH服务
+	# nmap   -sU  192.168.4.10
+	检查目标主机所开启的UDP服务
+	
+	使用tcpdump分析FTP访问中的明文交换信息
+	# yum -y install vsftpd
+	# systemctl restart vsftpd
+	# tcpdump -A host 192.168.4.5 and tcp port 21
+	执行tcpdump命令行，添加适当的过滤条件，只抓取访问主机192.168.4.5
+	的21端口的数据通信 ，并转换为ASCII码格式的易读文本
+
+	**监控选项如下：
+	// -i，指定监控的网络接口（默认监听第一个网卡）
+	// -A，转换为 ACSII 码，以方便阅读
+	// -w，将数据包信息保存到指定文件
+	// -r，从指定文件读取数据包信息
+	//tcpdump的过滤条件：
+	// 类型：host、net、port、portrange
+	// 方向：src、dst
+	// 协议：tcp、udp、ip、wlan、arp、……
+	// 多个条件组合：and、or、not
+
+	执行FTP访问，并观察tcpdump抓包结果
+	从192.168.4.100访问主机192.168.4.5的vsftpd服务。
+	yum -y install ftp
+	ftp 192.168.4.5
+
+	# tcpdump  -A  -w  ftp.cap  \
+	> host 192.168.4.5  and  tcp  port 21  //抓包并保存
+	再次使用tcpdump抓包，使用-w选项可以将抓取的数据包另存为文件，
+	方便后期慢慢分析。
+	# tcpdump  -A  -r  ftp.cap | egrep  '(USER|PASS)'  
+				  //分析数据包
+	tcpdump命令的-r选项，可以去读之前抓取的历史数据文件
+
+	
+	：扩展知识，使用tcpdump分析Nginx的明文账户认证信息信息
+	# vim /usr/local/nginx/conf/nginx.conf
+	auth_basic "xx";
+	auth_basic_user_file "/usr/local/nignx/pass";
+	# htpasswd -c /usr/local/nginx/pass jerry   //创建账户文件
+	# nginx -s reload
+	# tcpdump  -A  host 192.168.4.5  and  tcp  port  80
+
+	在真实机使用浏览器访问192.168.4.5
+	# firefox  http://192.168.4.5   //根据提示输入用户名与密码
+	回到proxy查看抓包的数据结果
+	# tcpdump -A host 192.168.4.5 and tcp port 80
+	Authorization: Basic dG9tOjEyMzQ1Ng
+	
+	查看base64编码内容
+	# echo "dG9tOjEyMzQ1Ng==" | base64 -d
+	# echo "tom:123456" | base64 
+
+
+*** #md5sum file?.txt
+	#gpg --version
+	# gpg --gen-key
+	gpg --list-keys
+	gpg -a --export tommy >tommy.pub
+	gpg --import /tmp/a.pub
+	gpg --verify log.tar.sig  log.tar
+	aide --init
+	aide --check
+	nmap -...
+	tcpdump -.. .
+
+
+
+******  
+	md5 校验工具  md5sum
+	GnuPG  加解密工具 gpg --version
+	AIDE 入侵监测系统  aide
+	NMAP 扫描分析工具  nmap
+	tcpdump 网络抓包工具 tcpdump 
+
+
+
+
+33333333333333333333333333333333333333333333333333333333333333333
+33333333333333333333333333333333333333333333333333333333333333
+33333333333333333333333333333333333333333333333333333333333333
+
+
+
+
+audit 审计工具  每个公司都有审计工具，不一定是audit
+
+jumpserver  国产的，开原图形 audit
+
+
+
+
+./configure
+make
+make install
+
+status
+
+tcp/ip 簇[http]
+
+ARPNET   全世界的第一个网，军队  --放弃，->学院继续研究 tcp/ip [企业]
+
+GET   请求指定的页面信息
+POST  向指定资源提交数据进行处理请求（上传）
+实际生产用，其他的全拒绝   GET HEAD POST DELETE PUT ..
+
+autindex on;
+server_tokens off;
+
+LVM  快照
+
+mysql   .bash_history    .mysql_history
+
+
+
+：部署audit监控文件
+# yum -y  install  audit                //安装软件包
+# cat /etc/audit/auditd.conf            //查看配置文件，确定日志位置
+log_file = /var/log/audit/audit.log                //日志文件路径
+# systemctl start auditd                //启动服务
+# systemctl enable auditd            //设置开机自启
+# auditctl  -s                        //查询状态
+# auditctl  -l                        //查看规则
+# auditctl  -D                        //删除所有规则
+定义临时文件系统规则：
+#语法格式：auditctl  -w  path  -p  permission  -k  key_name
+# path为需要审计的文件或目录
+# 权限可以是r,w,x,a(文件或目录的属性发生变化)
+# Key_name为可选项，方便识别哪些规则生成特定的日志项
+# auditctl  -w  /etc/passwd  -p wa  -k  passwd_change
+//设置规则所有对passwd文件的写、属性修改操作都会被记录审计日志
+ # auditctl  -w  /etc/selinux/  -p wa  -k  selinux_change
+//设置规则，监控/etc/selinux目录
+ # auditctl  -w  /usr/sbin/fdisk  -p x  -k  disk_partition
+//设置规则，监控fdisk程序
+# auditclt  -w  /etc/ssh/sshd_conf  -p warx  -k  sshd_config
+//设置规则，监控sshd_conf文件
+如果需要创建永久审计规则，则需要修改规则配置文件：
+# vim  /etc/audit/rules.d/audit.rules
+-w /etc/passwd -p wa -k passwd_changes
+-w /usr/sbin/fdisk -p x -k partition_disks
+查看audit日志信息：
+# tailf  /var/log/audit/audit.lo
+#内容分析
+# type为类型
+# msg为(time_stamp:ID)，时间是date +%s（1970-1-1至今的秒数）
+# arch=c000003e，代表x86_64（16进制）
+# success=yes/no，事件是否成功
+# a0-a3是程序调用时前4个参数，16进制编码了
+# ppid父进程ID，如bash，pid进程ID，如cat命令
+# auid是审核用户的id，su - test, 依然可以追踪su前的账户
+# uid，gid用户与组
+# tty:从哪个终端执行的命令
+# comm="cat"            用户在命令行执行的指令
+# exe="/bin/cat"        实际程序的路径
+# key="sshd_config"    管理员定义的策略关键字key
+# type=CWD        用来记录当前工作目录
+# cwd="/home/username"
+# type=PATH
+# ouid(owner's user id）    对象所有者id
+# guid(owner's groupid）    对象所有者id
+# ausearch -k sshd_config -i    
+//根据key搜索日志，-i选项表示以交互式方式操作
+默认该程序会搜索/var/log/audit/audit.log，ausearch options -if file_name可以指定文件名。
+
+2：加固常见服务的安全
+
+优化Nginx服务的安全配置
+优化MySQL数据库的安全配置
+优化Tomcat的安全配置
+
+Nginx安全优化包括：删除不要的模块、修改版本信息、限制并发、拒绝非法请求、防止buffer溢出。
+MySQL安全优化包括：初始化安全脚本、密码安全、备份与还原、数据安全。
+Tomcat安全优化包括：隐藏版本信息、降权启动、删除默认测试页面.
+
+# ./configure \
+>--without-http_autoindex_module \            //禁用自动索引文件目录模块
+>--without-http_ssi_module
+
+# vim /usr/local/nginx/conf/nginx.conf
+… …
+http{
+     server_tokens off;                            //在http下面手动添加这么一行
+     … …
+}
+# nginx -s reload
+# curl -I http://192.168.4.5          //查看服务器响应的头部信息
+
+
+但服务器还是显示了使用的软件为nginx，通过如下方法可以修改该信息。
+# vim +48 src/http/ngx_http_header_filter_module.c
+//注意：vim这条命令必须在nginx-1.12源码包目录下执行！！！！！！
+//该文件修改前效果如下：
+static u_char ngx_http_server_string[] = "Server: nginx" CRLF;
+static u_char ngx_http_server_full_string[] = "Server: " NGINX_VER CRLF;
+static u_char ngx_http_server_build_string[] = "Server: " NGINX_VER_BUILD CRLF;
+//下面是我们修改后的效果：
+static u_char ngx_http_server_string[] = "Server: Jacob" CRLF;
+static u_char ngx_http_server_full_string[] = "Server: Jacob" CRLF;
+static u_char ngx_http_server_build_string[] = "Server: Jacob" CRLF;
+//修改完成后，再去编译安装Nignx，版本信息将不再显示为Nginx，而是Jacob
+[root@proxy nginx-1.12]# ./configure
+[root@proxy nginx-1.12]# make && make install
+[root@proxy nginx-1.12]# killall nginx
+[root@proxy nginx-1.12]# /usr/local/nginx/sbin/nginx            //启动服务
+[root@proxy nginx-1.12]# curl -I http://192.168.4.5            //查看版本信息验证
+
+
+3） 限制并发量
+DDOS攻击者会发送大量的并发连接，占用服务器资源（包括连接数、带宽等），这样会导致正常用户处于等待或无法访问服务器的状态。
+Nginx提供了一个ngx_http_limit_req_module模块，可以有效降低DDOS攻击的风险，操作方法如下：
+[root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+… …
+http{
+… …
+limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;
+    server {
+        listen 80;
+        server_name localhost;
+        limit_req zone=one burst=5;
+            }
+}
+//备注说明：
+//limit_req_zone语法格式如下：
+//limit_req_zone key zone=name:size rate=rate;
+//上面案例中是将客户端IP信息存储名称为one的共享内存，内存空间为10M
+//1M可以存储8千个IP信息，10M可以存储8万个主机连接的状态，容量可以根据需要任意调整
+//每秒中仅接受1个请求，多余的放入漏斗
+//漏斗超过5个则报错
+[root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+客户端使用ab测试软件测试效果：
+[root@client ~]# ab -c 100 -n 100  http://192.168.4.5/
+
+
+
+4） 拒绝非法的请求
+网站使用的是HTTP协议，该协议中定义了很多方法，可以让用户连接服务器，获得需要的资源。但实际应用中一般仅需要get和post。
+具体HTTP请求方法的含义如表-1所示。
+表-1 HTTP请求方法及含义
+￼
+未修改服务器配置前，客户端使用不同请求方法测试：
+[root@client ~]# curl -i -X GET  http://192.168.4.5            //正常
+[root@client ~]# curl -i -X HEAD http://192.168.4.5            //正常
+//curl命令选项说明：
+//-i选项：访问服务器页面时，显示HTTP的头部信息
+//-X选项：指定请求服务器的方法
+通过如下设置可以让Nginx拒绝非法的请求方法：
+[root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+http{
+       server {
+                 listen 80;
+#这里，!符号表示对正则取反，~符号是正则匹配符号
+#如果用户使用非GET或POST方法访问网站，则retrun返回444的错误信息
+              if ($request_method !~ ^(GET|POST)$ ) {
+                     return 444;
+               }    
+        }
+}
+[root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+修改服务器配置后，客户端使用不同请求方法测试：
+[root@client ~]# curl -i -X GET  http://192.168.4.5            //正常
+[root@client ~]# curl -i -X HEAD http://192.168.4.5            //报错
+
+
+
+
+4） 防止buffer溢出
+当客户端连接服务器时，服务器会启用各种缓存，用来存放连接的状态信息。
+如果攻击者发送大量的连接请求，而服务器不对缓存做限制的话，内存数据就有可能溢出（空间不足）。
+修改Nginx配置文件，调整各种buffer参数，可以有效降低溢出风险。
+[root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+http{
+client_body_buffer_size  1K;
+client_header_buffer_size 1k;
+client_max_body_size 1k;
+large_client_header_buffers 2 1k;
+ … …
+}
+[root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+步骤二：数据库安全
+
+1） 初始化安全脚本
+安装完MariaDB或MySQL后，默认root没有密码，并且提供了一个任何人都可以操作的test测试数据库。有一个名称为mysql_secure_installation的脚本，该脚本可以帮助我们为root设置密码，并禁止root从远程其他主机登陆数据库，并删除测试性数据库test。
+[root@proxy ~]# systemctl status mariadb
+//确保服务已启动 
+[root@proxy ~]# mysql_secure_installation
+//执行初始化安全脚本
+2）密码安全
+手动修改MariaDB或MySQL数据库密码的方法：
+[root@proxy ~]# mysqladmin -uroot -predhat password 'mysql'
+//修改密码，旧密码为redhat，新密码为mysql
+[root@proxy ~]# mysql -uroot -pmysql
+MariaDB [(none)]>set password for root@'localhost'=password('redhat');
+//使用账户登录数据库，修改密码
+MariaDB [(none)]> select user,host,password from mysql.user;
++--------+---------+---------------------------------------------+
+| user     | host     | password                                       |
++--------+---------+---------------------------------------------+
+| root     | localhost     | *84BB5DF4823DA319BBF86C99624479A198E6EEE9 |
+| root     | 127.0.0.1     | *84BB5DF4823DA319BBF86C99624479A198E6EEE9 |
+| root     | ::1           | *84BB5DF4823DA319BBF86C99624479A198E6EEE9 |
++--------+-----------+--------------------------------------------+
+修改密码成功，而且密码在数据库中是加密的，有什么问题吗？问题是你的密码被明文记录了，下面来看看明文密码：
+[root@proxy ~]# cat .bash_history
+mysqladmin -uroot -pxxx password 'redhat'
+//通过命令行修改的密码，bash会自动记录历史，历史记录中记录了明文密码
+[root@proxy ~]# cat .mysql_history 
+set password for root@'localhost'=password('redhat');
+select user,host,password from mysql.user;
+flush privileges;
+//通过mysql命令修改的密码，mysql也会有所有操作指令的记录，这里也记录了明文密码
+另外数据库还有一个binlog日志里也有明文密码（5.6版本后修复了）。
+怎么解决？
+管理好自己的历史，不使用明文登录，选择合适的版本5.6以后的版本，
+日志，行为审计（找到行为人），使用防火墙从TCP层设置ACL（禁止外网接触数据库）。
+3）数据备份与还原
+首先，备份数据库（注意用户名为root，密码为redhat）：
+[root@proxy ~]# mysqldump -uroot -predhat mydb table > table.sql
+//备份数据库中的某个数据表
+[root@proxy ~]# mysqldump -uroot -predhat mydb > mydb.sql
+//备份某个数据库
+[root@proxy ~]# mysqldump -uroot -predhat --all-databases > all.sql
+//备份所有数据库
+接下来，还原数据库（注意用户名为root，密码为redhat）：
+[root@proxy ~]# mysql -uroot -predhat mydb  < table.sql            //还原数据表
+[root@proxy ~]# mysql -uroot -predhat mydb  < mydb.sql            //还原数据库
+[root@proxy ~]# mysql -uroot -predhat < all.sql                    //还原所有数据库
+4）数据安全
+在服务器上（192.168.4.5），创建一个数据库账户：
+[root@proxy ~]# mysql -uroot -predhat
+//使用管理员，登陆数据库
+MariaDB [(none)]> grant all on *.* to tom@'%' identified by '123';
+//创建一个新账户tom
+使用tcpdump抓包（192.168.4.5）
+[root@proxy ~]# tcpdump -w log -i any src or dst port 3306
+//抓取源或目标端口是3306的数据包，保存到log文件中
+客户端（192.168.4.100）从远程登陆数据库服务器（192.168.4.5）
+[root@client ~]# mysql -utom -p123 -h 192.168.4.5
+//在192.168.4.100这台主机使用mysql命令登陆远程数据库服务器（192.168.4.5）
+//用户名为tom，密码为123
+MariaDB [(none)]> select * from mysql.user;
+//登陆数据库后，任意执行一条查询语句
+回到服务器查看抓取的数据包
+[root@proxy ~]# tcpdump -A -r log
+//使用tcpdump查看之前抓取的数据包，很多数据库的数据都明文显示出来
+如何解决？
+可以使用SSH远程连接服务器后，再从本地登陆数据库（避免在网络中传输数据，因为网络环境中不知道有没有抓包者）。
+或者也可以使用SSL对MySQL服务器进行加密，类似与HTTP+SSL一样，MySQL也支持SSL加密（确保网络中传输的数据是被加密的）。
+步骤三：Tomcat安全性
+
+1） 隐藏版本信息、修改tomcat主配置文件（隐藏版本信息）
+未修改版本信息前，使用命令查看服务器的版本信息
+注意：proxy有192.168.2.5的IP地址，这里使用proxy作为客户端访问192.168.2.100服务器。
+[root@proxy ~]# curl -I http://192.168.2.100:8080/xx        
+//访问不存在的页面文件，查看头部信息
+[root@proxy ~]# curl -I http://192.168.2.100:8080    
+//访问存在的页面文件，查看头部信息
+[root@proxy ~]# curl http://192.168.2.100:8080/xx
+//访问不存在的页面文件，查看错误信息
+修改tomcat配置文件，修改版本信息(在192.168.2.100操作)：
+[root@web1 tomcat]# yum -y install java-1.8.0-openjdk-devel
+[root@web1 tomcat]# cd /usr/local/tomcat/lib/
+[root@web1 lib]# jar -xf catalina.jar
+[root@web1 lib]# vim org/apache/catalina/util/ServerInfo.properties 
+//根据自己的需要，修改版本信息的内容
+[root@web1 lib]# /usr/local/tomcat/bin/shutdown.sh        //关闭服务
+[root@web1 lib]# /usr/local/tomcat/bin/startup.sh        //启动服务
+修改后，客户端再次查看版本信息（在192.168.2.5操作）：
+[root@proxy ~]# curl -I http://192.168.2.100:8080/xx        
+//访问不存在的页面文件，查看头部信息
+[root@proxy ~]# curl -I http://192.168.2.100:8080    
+//访问存在的页面文件，查看头部信息
+[root@proxy ~]# curl http://192.168.2.100:8080/xx
+//访问不存在的页面文件，查看错误信息
+再次修改tomcat服务器配置文件，修改版本信息，手动添加server参数（在192.168.2.100操作）：
+[root@web1 lib]# vim /usr/local/tomcat/conf/server.xml
+<Connector port="8080" protocol="HTTP/1.1"
+connectionTimeout="20000"  redirectPort="8443" server="jacob" />
+[root@web1 lib]# /usr/local/tomcat/bin/shutdown.sh        //关闭服务
+[root@web1 lib]# /usr/local/tomcat/bin/startup.sh        //启动服务
+修改后,客户端再次查看版本信息（在192.168.2.5操作）：
+[root@proxy ~]# curl -I http://192.168.2.100:8080/xx        
+//访问不存在的页面文件，查看头部信息
+[root@proxy ~]# curl -I http://192.168.2.100:8080    
+//访问存在的页面文件，查看头部信息
+[root@proxy ~]# curl http://192.168.2.100:8080/xx
+//访问不存在的页面文件，查看错误信息
+2）降级启动
+默认tomcat使用系统高级管理员账户root启动服务，启动服务尽量使用普通用户。
+[root@web1 ~]# useradd tomcat
+[root@web1 ~]# chown -R tomcat:tomcat /usr/local/tomcat/
+//修改tomcat目录的权限，让tomcat账户对该目录有操作权限
+[root@web1 ~]# su -c /usr/local/tomcat/bin/startup.sh tomcat
+//使用su命令切换为tomcat账户，以tomcat账户的身份启动tomcat服务
+[root@web1 ~]# chmod +x /etc/rc.local                //该文件为开机启动文件
+[root@web1 ~]# vim /etc/rc.local                     //修改文件，添加如下内容
+su -c /usr/local/tomcat/bin/startup.sh tomcat
+3）删除默认的测试页面
+[root@web1 ~]# rm -rf  /usr/local/tomcat/webapps/*
+3 案例3：使用diff和patch工具打补丁
+3.1 问题
+
+本案例要求优化提升常见网络服务的安全性，主要完成以下任务操作：
+使用diff对比文件差异
+使用diff生成补丁文件
+使用patch命令为旧版本打补丁
+3.2 方案
+
+程序是人设计出来的，总是会有这样那样的问题与漏洞，目前的主流解决方法就是为有问题的程序打补丁，升级新版本。
+在Linux系统中diff命令可以为我们生成补丁文件，然后使用patch命令为有问题的程序代码打补丁。
+3.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：对比单个文件差异
+
+1） 编写两个版本的脚本，一个为v1版本，一个为v2版本。
+[root@proxy ~]# cat test1.sh                                //v1版本脚本
+#!/bin/bash
+echo "hello wrld"
+[root@proxy ~]# cat test2.sh                                //v2版本脚本
+#!/bin/bash
+echo "hello the world"
+echo "test file"
+2） 使用diff命令语法
+使用diff命令查看不同版本文件的差异。
+[root@proxy ~]# diff  test1.sh test2.sh                     //查看文件差异
+@@ -1,3 +1,3 @@
+ #!/bin/bash
+-echo "hello world"
+-echo "test"
++echo "hello the world"
++echo "test file"
+[root@proxy ~]# diff -u test1.sh test2.sh                 //查看差异，包含头部信息
+--- test1.sh    2018-02-07 22:20:02.723971251 +0800
++++ test2.sh    2018-02-07 22:20:13.358760687 +0800
+@@ -1,3 +1,3 @@
+ #!/bin/bash
+-echo "hello world"
+-echo "test"
++echo "hello the world"
++echo "test file"
+diff制作补丁文件的原理：告诉我们怎么修改第一个文件后能得到第二个文件。
+这样如果第一个版本的脚本有漏洞，我们不需要将整个脚本都替换，仅需要修改有问题的一小部分代码即可，diff刚好可以满足这个需求！
+像Linux内核这样的大块头，一旦发现有一个小漏洞，我们不可能把整个内核都重新下载，全部替换一遍，而仅需要更新有问题的那一小部分代码即可！
+diff命令常用选项：
+-u	输出统一内容的头部信息（打补丁使用），计算机知道是哪个文件需要修改
+-r	递归对比目录中的所有资源（可以对比目录）
+-a	所有文件视为文本（包括二进制程序）
+-N	无文件视为空文件（空文件怎么变成第二个文件）
+-N选项备注说明：
+A目录下没有txt文件，B目录下有txt文件
+diff比较两个目录时，默认会提示txt仅在B目录有（无法对比差异，修复文件）
+diff比较时使用N选项，则diff会拿B下的txt与A下的空文件对比，补丁信息会明确说明如何从空文件修改后变成txt文件，打补丁即可成功！
+步骤二：使用patch命令对单文件代码打补丁
+
+1）准备实验环境
+[root@proxy ~]# cd demo
+[root@proxy demo]# vim test1.sh
+#!/bin/bash
+echo "hello world"
+echo "test"
+[root@proxy demo]# vim test2.sh 
+#!/bin/bash
+echo "hello the world"
+echo "test file"
+2) 生成补丁文件
+[root@proxy demo]# diff -u test1.sh test2.sh > test.patch
+3）使用patch命令打补丁
+在代码相同目录下为代码打补丁
+[root@proxy demo]# yum -y install patch
+[root@proxy demo]# patch -p0 < test.patch                    //打补丁
+patching file test1.sh
+//patch -pnum（其中num为数字，指定删除补丁文件中多少层路径前缀）
+//如原始路径为/u/howard/src/blurfl/blurfl.c
+//-p0则整个路径不变
+//-p1则修改路径为u/howard/src/blurfl/blurfl.c
+//-p4则修改路径为blurfl/blurfl.c
+//-R(reverse)反向修复，-E修复后如果文件为空，则删除该文件
+[root@proxy demo]# patch -RE < test.patch                     //还原旧版本，反向修复
+步骤三：对比目录中所有文件的差异
+
+1） 准备实验环境
+[root@proxy ~]# mkdir demo
+[root@proxy ~]# cd demo
+[root@proxy demo]# mkdir {source1,source2}
+[root@proxy demo]# echo "hello world"       > source1/test.sh
+[root@proxy demo]# cp /bin/find source1/
+[root@proxy demo]#  tree source1/                        //source1目录下2个文件
+|-- find
+`-- test.sh
+[root@proxy demo]# echo "hello the world"  > source2/test.sh
+[root@proxy demo]# echo "test" > source2/tmp.txt
+[root@proxy demo]# cp /bin/find source2/
+[root@proxy demo]# echo "1" >> source2/find 
+[root@proxy demo]#  tree source2/                        //source1目录下3个文件
+|-- find
+|-- test.sh
+`-- tmp.txt
+//注意：两个目录下find和test.sh文件内容不同，source2有tmp.txt而source1没有该文件
+2）制作补丁文件
+[root@proxy demo]# diff -u source1/ source2/
+//仅对比了文本文件test.sh；二进制文件、tmp都没有对比差异，仅提示，因为没有-a和-N选项
+[root@proxy demo]# diff -Nu source1/ source2/
+//对比了test.sh，并且使用source2目录的tmp.txt与source1的空文件对比差异。
+[root@proxy demo]# diff -Nua source1/ source2/
+//对比了test.sh、tmp.txt、find(程序)。
+步骤四：使用patch命令对目录下的所有代码打补丁
+
+1）使用前面创建的source1和source2目录下的代码为素材，生成补丁文件
+
+root@proxy ~]# cd demo
+[root@proxy demo]# diff -Nuar source1/ source2/ > source.patch
+2）使用patch命令为代码打补丁
+[root@proxy demo]# ls
+source1  source2  source.patch
+[root@proxy demo]# cat source.patch                //对比的文件有路径信息
+--- source1/test.sh 2018-02-07 22:51:33.034879417 +0800
++++ source2/test.sh 2018-02-07 22:47:32.531754268 +0800
+@@ -1 +1 @@
+-hello world
++hello the world
+[root@proxy demo]# cd source1
+[root@proxy source1]# patch  -p1 < ../source.patch
+
+
+
+
+
+***   auditctl -s  -l  - ..
+	ausearch -k sshd_config -i
+	mysqldump -u root -p123 --all-databases >all.sql
+	mydql -uroot -p123 <all.sql   还原所有
+	tcpdump -w log -i any src or dst port 3306
+	mysql -utom -p123 -h 192.168.4.5
+	tcpdump -A -r log
+	diff test1.sh test2.sh
+	diff -u test1.sh test2.sh >test.patch
+	patch -p0 <test.patch
+	patch -RE <test.patch
+
+
+
+
+******audit  监控文件 审计
+	常见服务的安全    优化   nginx   mysql  tomcat
+	diff  和patch 工具打补丁
+
+	
+
+
+
+
+
+44444444444444444444444444444444444444444444444444444444444444444
+444444444444444444444444444444444444444444444444444444444444444444
+44444444444444444444444444444444444444444444444444444444444444444
+
+
+
+RHEL7默认是使用firewalld作为防火墙
+但是之前底层用的是--包过滤防火墙 iptables  .现在大多数企业用的都是这个
+
+	yum -y install iptables-services 
+		#记得要装包，否则配置也可以做。但是关机后所有的配置就都没了
+	#traceroute www.sina.com  #访问外网地址经过了多少跳
+
+
+***全部背下来
+	iptables  四表五链  
+	4表  nat    filter   raw   mangle
+	5链  INPUT  OUTPUT  FORWARD  PREROUTING  POSTROUTING
+	选项  -A -I     -L -n --line-numbers    -D -F   -P 	
+	通用匹配  -p  -s,-d  -i,-o    --sport,--dport 
+						 --icmp-type ICMP 类型	
+
+	iptables [-t 表名] 选项 [链名] [条件] [-j 目标操作 ]
+	#iptables -t filter -I INPUT -p icmp -j REJECT  #例子
+	
+	#iptables -p icmp --help
+
+	扩张：# iptables  -A  INPUT  -p tcp --dport 22\
+	> -m   mac --mac-source  52:54:00:00:00:0b  -j  DROP
+
+	 -m iprange --src-range ..   -m multiport --dports ..
+
+
+	SYN      SYN,ACK
+	request   reply  
+	#iptables -A INPUT -p icmp --icmp-type echo-request 
+	-j  DROP
+
+	SNAT 源地址转换
+	# iptables  -t  nat  -A POSTROUTING  -s  192.168.4.0/24
+	 -p tcp --dport 80  -j SNAT  --to-source 192.168.2.5
+
+	#service iptables save  #永久保存所有iptables 规则
+
+
+案例1：iptables基本管理
+案例2：filter过滤和转发控制
+案例3：防火墙扩展规则
+案例4：配置SNAT实现共享上网
+1 案例1：iptables基本管理
+1.1 问题
+
+本案例要求练习iptables命令的使用，按照要求完成以下任务：
+关闭firewalld，开启iptables服务
+查看防火墙规则
+追加、插入防火墙规则
+删除、清空防火墙规则
+1.2 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：关闭firewalld，启动iptables服务
+
+1）关闭firewalld服务器
+[root@proxy ~]# systemctl stop firewalld.service 
+[root@proxy ~]# systemctl disable firewalld.service
+2）安装iptables-services并启动服务
+[root@proxy ~]# yum -y install iptables-services
+[root@proxy ~]# systemctl start iptables.service
+步骤二：熟悉iptables框架
+
+1）iptables的4个表（区分大小写）：
+iptables默认有4个表，nat表（地址转换表）、filter表（数据过滤表）、raw表（状态跟踪表）、mangle表（包标记表）。
+2）iptables的5个链（区分大小写）：
+INPUT链（入站规则）
+OUTPUT链（出站规则）
+FORWARD链（转发规则）
+PREROUTING链（路由前规则）
+POSTROUTING链（路由后规则）
+步骤三：iptables命令的基本使用方法
+	#添加规则 -A 追加一条防火墙规则至链的末尾位置
+		  -I 插入一条防火墙规则至链的开头
+	查看规则   -L   查看iptables 所有规则
+		  -n  以数字形式显示地址、端口等信息
+		  --line-numbers 查看规则时，显示规则的行号
+	删除规则   -D  删除链内指定序号（或内容）的一条规则
+		  -F 清空所有的规则
+	默认规则   -P  为指定的链设置默认规则
+
+1）iptabels语法格式
+[root@proxy ~]# iptables  [-t 表名]  选项  [链名]  [条件]  [-j 目标操作]
+[root@proxy ~]# iptables  -t  filter  -I  INPUT -p  icmp  -j  REJECT
+[root@proxy ~]# iptables -t filter -I  INPUT   -p  icmp  -j  ACCEPT
+[root@proxy ~]# iptables  -I  INPUT  -p  icmp  -j  REJECT
+//注意事项与规律：
+//可以不指定表，默认为filter表
+//可以不指定链，默认为对应表的所有链
+//如果没有找到匹配条件，则执行防火墙默认规则
+//选项/链名/目标操作用大写字母，其余都小写
+########################################################################
+//目标操作：
+// ACCEPT：允许通过/放行
+// DROP：直接丢弃，不给出任何回应
+// REJECT：拒绝通过，必要时会给出提示
+// LOG：记录日志，然后传给下一条规则
+iptables命令的常用选项如表-1所示。
+表-1 iptables常用选项
+￼
+2）iptables命令的使用案例
+创建规则的案例：
+[root@proxy ~]# iptables  -t  filter  -A  INPUT  -p tcp  -j  ACCEPT
+//追加规则至filter表中的INPUT链的末尾，允许任何人使用TCP协议访问本机
+[root@proxy ~]# iptables  -I  INPUT  -p  udp  -j  ACCEPT
+//插入规则至filter表中的INPUT链的开头，允许任何人使用UDP协议访问本机
+[root@proxy ~]# iptables  -I  INPUT 2  -p  icmp  -j  ACCEPT
+//插入规则至filter表中的INPUT链的第2行，允许任何人使用ICMP协议访问本机
+查看iptables防火墙规则
+[root@proxy ~]# iptables  -nL  INPUT                    //仅查看INPUT链的规则
+target     prot opt source               destination
+ACCEPT     udp  --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0
+[root@proxy ~]# iptables  -L  INPUT  --line-numbers        //查看规则，显示行号
+num  target     prot opt source         destination
+1    ACCEPT     udp   --  anywhere     anywhere
+2    ACCEPT     icmp --   anywhere     anywhere
+3    ACCEPT     tcp  --   anywhere     anywhere
+删除规则，清空所有规则
+[root@proxy ~]# iptables  -D  INPUT  3
+//删除filter表中INPUT链的第3条规则
+[root@proxy ~]# iptables  -nL  INPUT                //查看规则，确认是否删除
+[root@proxy ~]# iptables  -F
+//清空filter表中所有链的防火墙规则
+[root@proxy ~]# iptables  -t  nat  -F
+//清空nat表中所有链的防火墙规则
+[root@proxy ~]# iptables  -t  mangle  -F
+//清空mangle表中所有链的防火墙规则
+[root@proxy ~]# iptables  -t  raw  -F
+//清空raw表中所有链的防火墙规则
+设置防火墙默认规则
+[root@proxy ~]# iptables  -t  filter  -P  INPUT  DROP
+[root@proxy ~]# iptables  -nL
+Chain INPUT (policy DROP)
+… …
+2 案例2：filter过滤和转发控制
+2.1 问题
+
+本案例要求创建常用主机防火墙规则以及网络防火墙规则：
+针对Linux主机进行出站、入站控制
+利用ip_forward机制实现Linux路由/网关功能
+在Linux网关上实现数据包转发访问控制
+2.2 方案
+
+根据防火墙保护的对象不同，防火墙可以分为主机型防火墙与网络型防火墙，如图-1所示。
+主机型防火墙，主要保护的是服务器本机（过滤威胁本机的数据包）。
+网络防火墙，主要保护的是防火墙后面的其他服务器，如web服务器、FTP服务器等。
+￼
+2.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：iptables防火墙规则的条件
+
+iptables防火墙可以根据很多很灵活的规则进行过滤行为，具体常用的过滤条件如表-2所示。
+表-2 iptables过滤条件
+	*通用匹配 协议匹配  -p 协议名称
+		   地址匹配  -s 源地址，-d 目标地址
+		   接口匹配  -i  接受数据的网卡、-o 发送数据的网卡
+	 隐含匹配  端口匹配 --sport 源端口号  、--dport 目标端口号
+		   ICMP 类型匹配  --icmp-type  ICMP 类型
+￼
+1）主机型防火墙案例
+[root@proxy ~]# iptables -I INPUT -p tcp --dport 80 -j REJECT
+[root@proxy ~]# iptables -I INPUT -s 192.168.2.100 -j REJECT
+[root@proxy ~]# iptables -I INPUT -d 192.168.2.5 -p tcp --dport 80 -j REJECT
+[root@proxy ~]# iptables -I INPUT -i eth0 -p tcp --dport 80 -j REJECT
+[root@proxy ~]# iptables  -A  INPUT  -s 192.168.4.100  -j  DROP
+//丢弃192.168.4.100发给本机的所有数据包
+[root@proxy ~]# iptables  -A  INPUT -s  192.168.2.0/24  -j  DROP
+//丢弃192.168.2.0/24网络中所有主机发送给本机的所有数据包
+[root@proxy ~]# iptables -A  INPUT -s  114.212.33.12  -p tcp --dport 22 -j  REJECT
+//拒绝114.212.33.12使用tcp协议远程连接本机ssh（22端口）
+步骤二：开启Linux的路由转发功能
+
+1）Linux内核默认支持软路由功能，通过修改内核参数即可开启或关闭路由转发功能。
+[root@proxy ~]# echo 0 > /proc/sys/net/ipv4/ip_forward            //关闭路由转发
+[root@proxy ~]# echo 1 > /proc/sys/net/ipv4/ip_forward            //开启路由转发
+//注意以上操作仅当前有效，计算机重启后无效
+[root@proxy ~]# echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
+//修改/etc/sysctl.conf配置文件，可以实现永久有效规则
+步骤四：网络型防火墙案例
+	client eth0:192.168.4.100
+		网关: 192.168.4.5
+	proxy  eth0 :192.168.4.5
+		 eth1 :192.168.2.5
+	web1  eth1 :192.168.2.100
+		网关 : 192.168.2.5
+
+1）网络型防火墙案例
+部署如表-3所示的网络拓扑，一定要把proxy主机的路由转发功能打开。
+表-3 实验拓扑
+￼
+添加网关的命令
+[root@client ~]# nmcli connection modify eth0 ipv4.gateway 192.168.4.5
+[root@client ~]# nmcli connection up eth0
+[root@web1 ~]# nmcli connection modify eth1 ipv4.gateway 192.168.2.5
+[root@web1 ~]# nmcli connection up eth1
+确认不同网络的联通性
+[root@client ~]# ping 192.168.2.100
+[root@web1 ~]# ping 192.168.4.100
+在web1主机上启动http服务
+[root@web1 ~]# yum -y install httpd
+[root@web1 ~]# echo "test page" > /var/www/html/index.html
+[root@web1 ~]# systemctl restart httpd
+没有防火墙的情况下client访问web服务
+[root@client ~]# curl http://192.168.2.100                    //成功
+设置proxy主机的防火墙规则，保护防火墙后面的Web服务器
+[root@proxy ~]# iptables -I FORWARD -s 192.168.4.100 -p tcp --dport 80 -j DROP
+设置完防火墙规则后，再次使用client客户端访问测试效果
+[root@client ~]# curl http://192.168.2.100                    //失败
+步骤三：禁ping的相关策略
+
+1）默认直接禁ping的问题？
+[root@proxy ~]# iptables -I INPUT -p icmp -j DROP
+//设置完上面的规则后，其他主机确实无法ping本机，但本机也无法ping其他主机
+//当本机ping其他主机，其他主机回应也是使用icmp，对方的回应被丢弃
+2）禁止其他主机ping本机，允许本机ping其他主机
+[root@proxy ~]# iptables  -A  INPUT  -p icmp  \
+> --icmp-type echo-request  -j  DROP
+//仅禁止入站的ping请求，不拒绝入站的ping回应包
+注意：关于ICMP的类型，可以参考help帮助，参考命令如下：
+[root@proxy ~]# iptables -p icmp --help
+3 案例3：防火墙扩展规则
+3.1 问题
+
+本案例要求熟悉使用iptables的扩展规则，实现更丰富的过滤功能，完成以下任务：
+根据MAC地址封锁主机
+在一条规则中开放多个TCP服务
+根据IP范围设置封锁规则
+3.2 方案
+
+iptables在基本过滤条件的基础上还扩展了很多其他条件，在使用时需要使用-m参数来启动这些扩展功能，语法如下：
+iptables 选项 链名称 -m 扩展模块 --具体扩展条件 -j 动作
+3.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：根据MAC地址过滤
+
+1）根据IP过滤的规则，当对方修改IP后，防火墙会失效
+[root@proxy ~]# iptables -F
+[root@proxy ~]# iptables -I INPUT -s 192.168.4.100 -p tcp --dport 22 -j DROP
+//设置规则禁止192.168.4.100使用ssh远程本机
+但是，当client主机修改IP地址后，该规则就会失效，注意因为修改了IP，对client主机的远程连接会断开，需要使用virt-manager开启虚拟机操作：
+[root@client ~]# ifconfig eth0  192.168.4.101
+[root@client ~]# ssh 192.168.4.5                    //依然成功
+根据MAC地址过滤，可以防止这种情况的发生
+[root@client ~]# ip link show eth0                    //查看client的MAC地址
+eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP mode DEFAULT qlen 1000
+link/ether 52:54:00:00:00:0b brd ff:ff:ff:ff:ff:ff
+[root@proxy ~]# iptables  -A  INPUT  -p tcp --dport 22\
+> -m   mac --mac-source  52:54:00:00:00:0b  -j  DROP
+//拒绝52:54:00:00:00:0b这台主机远程本机
+步骤二：基于多端口设置过滤规则
+
+1）一次需要过滤或放行很多端口时会比较方便
+[root@proxy ~]# iptables  -A  INPUT  -p tcp   \
+> -m  multiport --dports  20:22,25,80,110,143,16501:16800  -j  ACCEPT
+//一次性开启20,21,22,25,80,110,143,16501到16800所有的端口
+提示，多端口还可以限制多个源端口，但因为源端口不固定，一般不会使用，限制多个源端口的参数是--sports.
+步骤三：根据IP地址范围设置规则
+
+1）允许从 192.168.4.10-192.168.4.20 登录
+[root@proxy ~]# iptables  -A  INPUT  -p tcp  --dport  22  \
+> -m  iprange  --src-range  192.168.4.10-192.168.4.20   -j  ACCEPT
+注意，这里也可以限制多个目标IP的范围，参数是--dst-range,用法与--src-range一致。
+2）禁止从 192.168.4.0/24 网段其他的主机登录
+[root@proxy ~]# iptables -A INPUT -p tcp --dport 22  -s 192.168.4.0/24  -j  DROP
+4 案例4：配置SNAT实现共享上网
+4.1 问题
+
+本案例要求设置防火墙规则，允许位于局域网中的主机可以访问外网，主要包括下列服务：
+搭建内外网案例环境
+配置SNAT策略实现共享上网访问
+4.2 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：搭建内外网案例环境
+
+表-4 实验拓扑
+￼
+这里，我们设定192.168.2.0/24网络为外部网络，192.168.4.0/24为内部网络。
+现在，在外部网络中有一台web服务器192.168.2.100，因为设置了网关，client已经可以访问此web服务器了。但，如果查看web1的日志就会发现，日志里记录的是192.168.4.100在访问网页。
+我们需要实现的效果是，client可以访问web服务器，但要伪装为192.168.2.5后再访问web服务器(模拟所有位于公司内部的电脑都使用的是私有IP，希望访问外网，就需要伪装为公司的外网IP后才可以)。
+步骤二：设置防火墙规则，实现IP地址的伪装（SNAT源地址转换）
+
+1）确保proxy主机开启了路由转发功能
+[root@proxy ~]# echo 1 > /proc/sys/net/ipv4/ip_forward            //开启路由转发
+2）设置防火墙规则，实现SNAT地址转换
+[root@proxy ~]# iptables  -t  nat  -A POSTROUTING \
+> -s  192.168.4.0/24 -p tcp --dport 80  -j SNAT  --to-source 192.168.2.5
+3）登陆web主机查看日志
+[root@proxy ~]# tail  /var/log/httpd/access_log
+.. ..
+192.168.2.5 - - [12/Aug/2018:17:57:10 +0800] "GET / HTTP/1.1" 200 27 "-" "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)"
+通过日志会发现，客户端是先伪装为了192.168.2.5之后再访问的web服务器！
+4）扩展知识，对于proxy外网IP不固定的情况可以执行下面的地址伪装，动态伪装IP。
+[root@proxy ~]# iptables  -t  nat  -A POSTROUTING \
+> -s  192.168.4.0/24 -p tcp --dport 80 -j MASQUERADE
+最后，所有iptables规则都是临时规则，如果需要永久保留规则需要执行如下命令:
+[root@proxy ~]# service  iptables save
+
+
+
+
+
+55555555555555555555555555555555555555555555555555555555555555555555
+5555555555555555555555555555555555555555555555555555555555555555555555
+55555555555555555555555555555555555555555555555555555555555555555555555
+
+
+·Zabbix  基于多种监控机制，支持分布式监控     学
+		 Cacti   Nagios   等，好多监控软件 
+
+
+*** ps  uptime  free   swapon -s    df -h    ifconfig
+      netstat,ss   ping  traceroute    iostat
+***  部署监控服务器	
+	fastcgi_buffers 8 16k;    //缓存php生成的页面内容，8个16k
+    fastcgi_buffer_size 32k;     //缓存php生产的头部信息
+    fastcgi_connect_timeout 300;  //连接PHP的超时时间
+    fastcgi_send_timeout 300;   //发送请求的超时时间
+    fastcgi_read_timeout 300;     //读取请求的超时时间
+	
+	]# yum -y install  net-snmp-devel  curl-devel 
+	libevent-devel   
+	./configure  --enable-server \
+> --enable-proxy --enable-agent --with-mysql=/usr/bin/mysql_config \
+> --with-net-snmp --with-libcurl
+
+	grant all on zabbix.* to zabbix@'localhost' identified by 'zabbix';
+	 mysql -uzabbix -pzabbix zabbix < schema.sql
+
+	
+	# vim /usr/local/etc/zabbix_server.conf
+		# zabbix_server        //启动服务
+	# vim /usr/local/etc/zabbix_agentd.conf
+		# zabbix_agentd    //启动监控agent
+
+根据错误提示，修改PHP配置文件，满足Zabbix_server的Web环境要求
+php-bcmath和php-mbstring都在lnmp_soft目录下有提供软件包。
+	php-gd  php-xml   php-bcmatc  php-mbstring
+	# vim /etc/php.ini
+	  # systemctl restart php-fpm
+	
+*** 被监控 主机
+
+
+
+
+Top
+NSD SECURITY DAY05
+
+案例1：常用系统监控命令
+案例2：部署Zabbix监控平台
+案例3：配置及使用Zabbix监控系统
+案例4：自定义Zabbix监控项目
+1 案例1：常用系统监控命令
+1.1 问题
+
+本案例要求熟悉查看Linux系统状态的常用命令，为进一步执行具体的监控任务做准备：
+查看内存信息
+查看交换分区信息
+查看磁盘信息
+查看CPU信息
+查看网卡信息
+查看端口信息
+查看网络连接信息
+1.2 方案
+
+一般企业做监控的目的：实时报告系统状态，提前发现系统的问题。
+监控的资源可以分为：共有数据（HTTP、FTP等）和私有数据（CPU、内存、进程数等）。
+监控软件可以使用：系统自带的命令、Cacti监控系统、Nagios监控系统、Zabbix监控系统。
+1.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：使用命令查看计算机状态数据
+
+1）查看内存与交换分区信息
+[root@proxy ~]# free        //查看内存信息
+              total        used        free      shared  buff/cache   available
+Mem:       16166888     8017696      720016      106504     7429176     7731740
+Swap:       4194300      218268     3976032
+[root@proxy ~]# free | awk '/Mem/{print $4}'   //查看剩余内存容量
+720928
+[root@proxy ~]# swapon -s   //查看交换分区信息
+文件名                类型            大小        已用        权限
+/dev/sda3             partition        4194300    218268    -1
+步骤二：查看磁盘与CPU利用率
+
+1）查看磁盘信息
+[root@proxy ~]# df     //查看所有磁盘的使用率
+文件系统           1K-块      已用      可用         已用% 挂载点
+/dev/sda2      476254208 116879624 335159084   26%         /
+/dev/sda1         198174    133897     49737   73%         /boot
+[root@proxy ~]# df | awk '/\/$/{print $5}'  //查看根分区的利用率
+2）查看CPU平均负载
+[root@proxy ~]# uptime  //查看CPU负载（1，5，15分钟）
+ 23:54:12 up 38 days, 14:54,  9 users,  load average: 0.00, 0.04, 0.05
+[root@proxy ~]# uptime |awk '{print $NF}'//仅查看CPU的15分钟平均负载
+0.05
+步骤二：查看网卡信息、端口信息、网络连接信息
+
+1）查看网卡信息
+[root@proxy ~]# ifconfig eth0
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.4.5  netmask 255.255.255.0  broadcast 172.25.0.255
+        inet6 fe80::5054:ff:fe00:b  prefixlen 64  scopeid 0x20<link>
+        ether 52:54:00:00:00:0b  txqueuelen 1000  (Ethernet)
+        RX packets 62429  bytes 10612049 (10.1 MiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 5674  bytes 4121143 (3.9 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+[root@proxy ~]# ifconfig eth0 |awk '/inet /{print $2}'   //查看IP地址信息
+192.168.4.5
+[root@proxy ~]# ifconfig eth0 |awk '/RX p/{print $5}'  //网卡接受数据包流量
+10625295
+[root@proxy ~]# ifconfig eth0 |awk '/TX p/{print $5}'   //网卡发送数据包流量
+4130821
+2）查看端口信息
+[root@proxy ~]# ss -ntulp  //查看本机监听的所有端口
+//-n以数字显示端口号
+//-t显示tcp连接
+//-u显示udp连接
+//-p显示监听端口对应的程序名称
+3）查看网络连接信息
+[root@proxy ~]# ss -antup   //查看所有的网络连接信息
+//-a查看所有连接状态信息
+2 案例2：部署Zabbix监控平台
+2.1 问题
+
+本案例要求部署一台Zabbix监控服务器，一台被监控主机，为进一步执行具体的监控任务做准备：
+安装LNMP环境
+源码安装Zabbix
+安装监控端主机，修改基本配置
+初始化Zabbix监控Web页面
+修改PHP配置文件，满足Zabbix需求
+安装被监控端主机，修改基本配置
+2.2 方案
+
+使用1台RHEL7虚拟机，安装部署LNMP环境、Zabbix及相关的依赖包，配置数据库并对Zabbix监控平台进行初始化操作。使用2台被监控端，源码安装Zabbix Agent。完成Zabbix实验需要我们搭建一个实验环境，拓扑结构如表-1所示。
+表-1 实验拓扑结构
+
+2.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：部署监控服务器
+
+1）安装LNMP环境
+Zabbix监控管理控制台需要通过Web页面展示出来，并且还需要使用MySQL来存储数据，因此需要先为Zabbix准备基础LNMP环境。
+[root@zabbixserver ~]# yum -y install gcc pcre-devel  openssl-devel
+[root@zabbixserver ~]# tar -xf nginx-1.12.2.tar.gz
+[root@zabbixserver ~]# cd nginx-1.12.2
+[root@zabbixserver nginx-1.12.2]# ./configure --with-http_ssl_module
+[root@zabbixserver nginx-1.12.2]# make && make install
+[root@zabbixserver ~]# yum -y install php php-mysql \
+> mariadb mariadb-devel mariadb-server
+[root@zabbixserver ~]# yum -y  install  php-fpm-5.4.16-42.el7.x86_64.rpm
+//注意，php-fpm这个软件包在lnmp_soft/目录下
+2）修改Nginx配置文件
+配置Nginx支持PHP动态网站，因为有大量PHP脚本需要执行，因此还需要开启Nginx的各种fastcgi缓存，加速PHP脚本的执行速度。
+[root@zabbixserver ~]# vim /usr/local/nginx/conf/nginx.conf
+… …
+http{
+… …
+    fastcgi_buffers 8 16k;   //缓存php生成的页面内容，8个16k
+    fastcgi_buffer_size 32k;   //缓存php生产的头部信息
+    fastcgi_connect_timeout 300;   //连接PHP的超时时间
+    fastcgi_send_timeout 300;     //发送请求的超时时间
+    fastcgi_read_timeout 300;    //读取请求的超时时间
+location ~ \.php$ {
+                root           html;
+                fastcgi_pass   127.0.0.1:9000;
+                fastcgi_index  index.php;
+                include        fastcgi.conf;
+        }
+… …
+3）启动服务
+启动Nginx、PHP-FPM、MariaDB服务，关闭SELinux与防火墙。
+[root@zabbixserver ~]# systemctl start  mariadb
+[root@zabbixserver ~]# systemctl start  php-fpm
+[root@zabbixserver ~]# ln -s /usr/local/nginx/sbin/nginx /sbin/nginx
+[root@zabbixserver ~]# nginx
+[root@zabbixserver ~]# firewall-cmd --set-default-zone=trusted
+[root@zabbixserver ~]# setenforce 0
+4）客户端测试LNMP环境
+服务器创建PHP测试页面，浏览器访问页面测试网页连通性。
+[root@zabbixserver ~]# cat /usr/local/nginx/html/test.php
+<?php
+$i=33;
+echo $i;
+?>
+[root@zabbixserver ~]# curl http://192.168.2.5/test.php
+步骤二：部署监控服务器Zabbix Server
+
+1）源码安装Zabbix Server
+多数源码包都是需要依赖包的，zabbix也一样，源码编译前需要先安装相关依赖包。
+[root@zabbixserver lnmp_soft]# yum -y install  net-snmp-devel \
+> curl-devel 
+//安装相关依赖包
+[root@zabbixserver lnmp_soft]# yum -y install  \
+> libevent-devel-2.0.21-4.el7.x86_64.rpm
+//注意libevent-devel这个软件包在lnmp_soft目录下有提供
+[root@zabbixserver lnmp_soft]# tar -xf zabbix-3.4.4.tar.gz
+[root@zabbixserver lnmp_soft]# cd zabbix-3.4.4/
+[root@zabbixserver zabbix-3.4.4]# ./configure  --enable-server \
+> --enable-proxy --enable-agent --with-mysql=/usr/bin/mysql_config \
+> --with-net-snmp --with-libcurl
+// --enable-server安装部署zabbix服务器端软件
+// --enable-agent安装部署zabbix被监控端软件
+// --enable-proxy安装部署zabbix代理相关软件
+// --with-mysql配置mysql_config路径
+// --with-net-snmp允许zabbix通过snmp协议监控其他设备
+// --with-libcurl安装相关curl库文件，这样zabbix就可以通过curl连接http等服务，测试被监控主机服务的状态
+[root@zabbixserver zabbix-3.4.4]# make && make install
+2）初始化Zabbix
+创建数据库，上线Zabbix的Web页面
+[root@zabbixserver ~]# mysql
+mysql> create database zabbix character set utf8;
+//创建数据库，支持中文字符集
+mysql> grant all on zabbix.* to zabbix@'localhost' identified by 'zabbix';
+//创建可以访问数据库的账户与密码
+[root@zabbixserver ~]# cd lnmp_soft/zabbix-3.4.4/database/mysql/
+[root@zabbixserver mysql]# mysql -uzabbix -pzabbix zabbix < schema.sql
+[root@zabbixserver mysql]# mysql -uzabbix -pzabbix zabbix < images.sql
+[root@zabbixserver mysql]# mysql -uzabbix -pzabbix zabbix < data.sql
+//刚刚创建是空数据库，zabbix源码包目录下，有提前准备好的数据
+//使用mysql导入这些数据即可（注意导入顺序）
+上线Zabbix的Web页面
+[root@zabbixserver ~]# cd lnmp_soft/zabbix-3.4.4/frontends/php/
+[root@zabbixserver php]# cp -r * /usr/local/nginx/html/
+[root@zabbixserver php]# chmod -R 777 /usr/local/nginx/html/*
+修改Zabbix_server配置文件，设置数据库相关参数，启动Zabbix_server服务
+[root@zabbixserver ~]# vim /usr/local/etc/zabbix_server.conf
+DBHost=localhost
+//数据库主机，默认该行被注释
+DBName=zabbix
+//设置数据库名称
+DBUser=zabbix
+//设置数据库账户
+DBPassword=zabbix
+//设置数据库密码，默认该行被注释
+LogFile=/tmp/zabbix_server.log    
+//设置日志，仅查看以下即可
+[root@zabbixserver ~]# useradd -s /sbin/nologin zabbix
+//不创建用户无法启动服务
+[root@zabbixserver ~]# zabbix_server    //启动服务
+[root@zabbixserver ~]# ss -ntulp |grep zabbix_server   //确认连接状态，端口10051
+tcp LISTEN 0 128 *:10051 *:* users:(("zabbix_server",pid=23275,fd=4),("zabbix_server",pid=23274,fd=4)
+提示：如果是因为配置文件不对，导致服务无法启动时，不要重复执行zabbix_server，
+一定要先使用killall zabbix_server关闭服务后，再重新启动一次。
+修改Zabbix_agent配置文件，启动Zabbix_agent服务
+[root@zabbixserver ~]# vim /usr/local/etc/zabbix_agentd.conf
+Server=127.0.0.1,192.168.2.5       //允许哪些主机监控本机
+ServerActive=127.0.0.1,192.168.2.5  //允许哪些主机通过主动模式监控本机
+Hostname=zabbix_server         //设置本机主机名
+LogFile=/tmp/zabbix_server.log        //设置日志文件
+UnsafeUserParameters=1           //是否允许自定义key
+[root@zabbixserver ~]# zabbix_agentd     //启动监控agent
+[root@zabbixserver ~]# ss -ntulp |grep zabbix_agentd   //查看端口信息为10050
+tcp    LISTEN     0      128       *:10050                 *:*                   users:(("zabbix_agentd",pid=23505,fd=4),("zabbix_agentd",pid=23504,fd=4)
+提示：如果是因为配置文件不对，导致服务无法启动时，不要重复执行zabbix_agentd，
+一定要先使用killall zabbix_agentd关闭服务后，再重新启动一次。
+浏览器访问Zabbix_server服务器的Web页面
+[root@zabbixserver ~]# firefox http://192.168.2.5/index.php
+//第一次访问，初始化PHP页面会检查计算机环境是否满足要求，如果不满足会给出修改建议
+//默认会提示PHP的配置不满足环境要求，需要修改PHP配置文件
+根据错误提示，修改PHP配置文件，满足Zabbix_server的Web环境要求
+php-bcmath和php-mbstring都在lnmp_soft目录下有提供软件包。
+[root@zabbixserver ~]# yum -y install  php-gd php-xml
+[root@zabbixserver ~]# yum install php-bcmath-5.4.16-42.el7.x86_64.rpm  
+[root@zabbixserver ~]# yum install php-mbstring-5.4.16-42.el7.x86_64.rpm
+[root@zabbixserver ~]# vim /etc/php.ini
+date.timezone = Asia/Shanghai     //设置时区
+max_execution_time = 300      //最大执行时间，秒
+post_max_size = 32M           //POST数据最大容量
+max_input_time = 300      //服务器接收数据的时间限制
+memory_limit = 128M        //内存容量限制
+[root@zabbixserver ~]# systemctl restart php-fpm
+修改完PHP配置文件后，再次使用浏览器访问服务器，则会提示如图-1和图-2所示的提示信息。
+
+图-1
+
+图-2
+注意：这里有一个PHP LDAP是warning状态是没有问题的！
+在初始化数据库页面，填写数据库相关参数，如图-3所示。
+
+图-3
+在登陆页面，使用用户(admin)和密码(zabbix)登陆，登陆后设置语言环境为中文，如图-4和图-5所示。
+
+图-4
+
+图-5
+步骤三：部署被监控主机Zabbix Agent
+
+1）源码安装Zabbix agent软件
+在2.100和2.200做相同操作（以zabbixclient_web1为例）。
+[root@zabbixclient_web1 ~]# useradd -s /sbin/nologin  zabbix
+[root@zabbixclient_web1 ~]# yum -y install gcc pcre-devel
+[root@zabbixclient_web1 ~]# tar -xf zabbix-3.4.4.tar.gz 
+[root@zabbixclient_web1 ~]# cd zabbix-3.4.4/
+[root@zabbixclient_web1 zabbix-3.4.4]# ./configure --enable-agent
+[root@zabbixclient_web1 zabbix-3.4.4]# make && make install 
+2）修改agent配置文件，启动Agent
+[root@zabbixclient_web1 ~]# vim /usr/local/etc/zabbix_agentd.conf
+Server=127.0.0.1,192.168.2.5    //谁可以监控本机（被动监控模式）
+ServerActive=127.0.0.1,192.168.2.5  //谁可以监控本机（主动监控模式）
+Hostname=zabbixclient_web1     //被监控端自己的主机名
+EnableRemoteCommands=1    
+//监控异常后，是否允许服务器远程过来执行命令，如重启某个服务
+UnsafeUserParameters=1          //是否允许自定义key监控
+[root@zabbixclient_web1 ~]# zabbix_agentd    //启动agent服务
+3）拷贝启动脚本（非必须操作，可选做），有启动脚本可以方便管理服务，启动与关闭服务。启动脚本位于zabbix源码目录下。
+[root@zabbixclient_web1 zabbix-3.4.4]# cd misc/init.d/fedora/core
+[root@zabbixclient_web1 zabbix-3.4.4]# cp zabbix_agentd /etc/init.d/
+[root@zabbixclient_web1 zabbix-3.4.4]# /etc/init.d/zabbix_agentd start
+[root@zabbixclient_web1 zabbix-3.4.4]# /etc/init.d/zabbix_agentd stop
+[root@zabbixclient_web1 zabbix-3.4.4]# /etc/init.d/zabbix_agentd status
+[root@zabbixclient_web1 zabbix-3.4.4]# /etc/init.d/zabbix_agentd restart
+3 案例3：配置及使用Zabbix监控系统
+3.1 问题
+
+沿用练习一，使用Zabbix监控平台监控Linux服务器，实现以下目标：
+监控CPU
+监控内存
+监控进程
+监控网络流量
+监控硬盘
+3.2 方案
+
+通过Zabbix监控平台，添加被监控zabbixclient_web1主机（192.168.2.100）并链接监控模板即可，Zabbix默认模板就可以监控CPU、内存、进程、网络、磁盘等项目。
+3.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：添加监控主机
+
+主机是Zabbix监控的基础，Zabbix所有监控都是基于Host主机。
+使用火狐浏览器登录http://192.168.2.5，通过Configuration（配置）-->Hosts（主机）-->Create Host（创建主机）添加被监控Linux主机，如图-7所示。
+
+图-7
+添加被监控主机时，需要根据提示输入被监控Linux主机的主机名称（最好与电脑的主机名一致，但也允许不一致）、主机组、IP地址等参数，具体参考图-8所示。
+
+图-8
+步骤二：为被监控主机添加监控模板
+
+Zabbix通过监控模板来对监控对象实施具体的监控功能，根据模板来定义需要监控哪些数据，对于Linux服务器的监控，Zabbix已经内置了相关的模板（Template OS Linux），选择模板并链接到主机即可，如图-9所示。
+
+图-9
+步骤三：查看监控数据
+
+查看监控数据，登录Zabbix Web控制台，点击Monitoring(监控中)—> Latest data(最新数据)，正过滤器中填写过滤条件，根据监控组和监控主机选择需要查看哪些监控数据，如图-10所示。
+
+图-10
+找到需要监控的数据后，可以点击后面的Graph查看监控图形，如图-11所示。
+
+图-11
+4 案例4：自定义Zabbix监控项目
+4.1 问题
+
+沿用练习二，使用Zabbix实现自定义监控，实现以下目标：监控Linux服务器系统账户的数量。
+4.2 方案
+
+需要使用Zabbix自定义key的方式实现自定义监控，参考如下操作步骤：
+创建自定义key
+创建监控项目
+创建监控图形
+将监控模板关联到主机
+4.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：被监控主机创建自定义key（在192.168.2.100操作）
+
+1）创建自定义key
+自定义key语法格式为：UserParameter=自定义key名称,命令。
+自定义的key文件一般存储在/usr/local/etc/zabbix_agentd.conf.d/目录，这里还需要修改zabbix_agentd.conf文件，允许自定义监控key，来读取该目录下的所有文件 。
+[root@zabbixclient_web1 ~]# vim /usr/local/etc/zabbix_agentd.conf
+Include=/usr/local/etc/zabbix_agentd.conf.d/                //加载配置文件目录
+[root@zabbixclient_web1 ~]# cd /usr/local/etc/zabbix_agentd.conf.d/
+[root@zabbixclient_web1 zabbix_agentd.conf.d]# vim count.line.passwd
+UserParameter=count.line.passwd,wc -l /etc/passwd | awk ' {print $1} '
+////自定义key语法格式:
+//UserParameter=自定义key名称,命令
+2）测试自定义key是否正常工作
+[root@zabbixclient_web1 ~]# killall  zabbix_agentd
+[root@zabbixclient_web1 ~]# zabbix_agentd                                //重启agent服务
+[root@zabbixclient_web1 ~]# zabbix_get -s 127.0.0.1 -k count.line.passwd
+21
+注意：如zabbix_get命令执行错误，提示Check access restrictions in Zabbix agent configuration，则需要检查agent配置文件是否正确：
+[root@zabbixclient_web1 ~]# vim /usr/local/etc/zabbix_agentd.conf
+Server=127.0.0.1,192.168.2.5
+ServerActive=127.0.0.1,192.168.2.5
+步骤二：创建监控模板
+
+模板、应用集与监控项目的关系图，参考图-12所示
+
+图-12
+1）添加监控模板
+登录Zabbix Web监控控制台，通过Configuration(配置)-->Template(模板)-->Create template(创建模板)，填写模板名称，新建模板群组，如图-13所示。
+
+图-13
+创建模板后，默认模板中没有任何应用、项目、触发器、图形等，如图-14所示。
+
+图-14
+2）创建应用
+创建完成模板后，默认模板中没有任何应用、项目、触发器、图形等资源。这里需要点击模板后面的Application（应用集）链接打开创建应用的页面，如图-15所示。
+
+图-15
+点击Application（应用集）后，会刷新出图-16所示页面，在该页面中点击Create application（创建应用集）按钮。
+
+图-16
+设置应用名称如图-17所示。
+
+图-17
+3）创建监控项目item（监控项）
+与创建应用一样，在模板中还需要创建监控项目，如图-18所示，并在刷新出的新页面中选择Create items（创建监控项）创建项目，如图-19所示。
+
+图-18
+
+图-19
+接下来，还需要给项目设置名称及对应的自定义key，如图-20所示。
+
+图-20
+4）创建图形
+为了后期可以通过图形的方式展示监控数据，还需要在模板中创建图形，设置方法与前面的步骤一致，在监控模板后面点击Graph（图形）即可创建图形，设置监控图形基于什么监控数据，如图-21所示。
+
+图-21
+5）将模板链接到被监控主机
+将完整的监控模板制作完成后，就可以将模板链接到主机实现监控功能了。首先找到被监控主机Configuration（配置）-->Hosts（主机），如图-22所示。
+
+图-22
+点击需要的被监控主机链接，打开监控主机设置页面，在Template（模板）页面中选择需要链接到该主机的模板，在此选择刚刚创建的模板count_line.passwd添加即可，如图-23所示。
+
+图-23
+6）查看监控数据图形
+点击Monitoring（监控中）-->Craphs（图形），根据需要选择条件，查看监控图形，如图-24和图-25所示。
+
+
+图-25
+
+
+
+
+
+6666666666666666666666666666666666666666666666666666666666666666666
+666666666666666666666666666666666666666666666666666666666666666666666
+6666666666666666666666666666666666666666666666666666666666666666666666
+
+
+
+
+
+****zabbix 报警
+	trigger 触发器     action  动作
+	expression 触发器表达式
+	zabbix 自动发现 （discovery
+	zabbix 主动监控 
+	vim /usr/local/etc/zabbix_agentd.conf
+	拓扑图与聚合图形
+	自定义监控 nginx ，status
+	UserParameter=ping[*],echo $1
+	vim /usr/local/etc/zabbix_agentd.conf.d/*
+	vim /usr/local/bin/nginx_status.sh
+	zabbix_get -s 127.0.0.1 -k 'nginx.status.sh[active]'
+	
+	TCP 三次握手，四次断开
+	ab -c 1000 -n 100000 http://192.168.2.100/
+	ss -antup
+	vim /usr/local/bin/net_status.sh
+	zabbix_get -s 127.0.0.1  -k 'net.status[time_wait]'
+	监控netstatus
+
+
+
+
+Top
+NSD SECURITY DAY06
+
+案例1：实现Zabbix报警功能
+案例2：Zabbix自动发现
+案例3：Zabbix主动监控
+案例4：拓扑图与聚合图形
+案例5：自定义监控案例
+1 案例1：实现Zabbix报警功能
+1.1 问题
+
+沿用第5天Zabbix练习，使用Zabbix实现报警功能，实现以下目标：
+监控Linux服务器系统账户
+创建Media，设置邮件服务器及收件人邮箱
+当系统账户数量超过26人时发送报警邮件
+1.2 方案
+
+自定义的监控项默认不会自动报警，首页也不会提示错误，需要配置触发器与报警动作才可以自定报警。
+什么是触发器（trigger）？
+表达式，如内存不足300M，用户超过30个等
+当出发条件发生后，会导致一个触发事件
+触发事件会执行某个动作
+什么是动作（action）？
+动作是触发器的条件被触发后所执行的行为
+可以是发送邮件、也可以是重启某个服务等
+参考如下操作步骤：
+创建触发器并设置标记
+设置邮箱
+创建Action动作
+1.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：创建触发器规则
+
+1）创建触发器
+创建触发器时强烈建议使用英文的语言环境，通过Configuration--> Templates，找到我们之前创建的count.line.passwd模板，点击模板后面的triggers，如图-1所示。
+
+图-1
+2）触发器表达式
+创建触发器时需要定义表达式，触发器表达式（Expression）是触发异常的条件，触发器表达式格式如下：
+{<server>:<key>.<function>(<parameter>)}<operator><constant>
+{主机：key.函数(参数)}<表达式>常数
+在如图-2所示的蓝色方框中编写触发器表达式，可以直接手写，也可以通过add选择表达式模板。
+
+图-2
+下面，我们看几个表达式的案例：
+{web1:system.cpu.load[all,avg1].last(0)}>5	//0为最新数据
+如果web1主机最新的CPU平均负载值大于5，则触发器状态Problem
+{vfs.fs.size[/,free].max(5m)}<10G	//5m为最近5分钟
+根分区，最近5分钟的最大容量小于10G，则状态进入Problem
+{vfs.file.cksum[/etc/passwd].diff(0)}>0	//0为最新数据
+最新一次校验/etc/passwd如果与上一次有变化，则状态进入Problem
+大多数函数使用秒作为参数，可以使用#来表示其他含义（具体参考表-1）。
+avg, count, last, min and max 等函数支持额外的第二个参数time_shift（时间偏移量），这个参数允许从过去一段时间内引用数据。
+3）配置触发器
+设置触发器名称，如图-3所示，点击add添加表达式，填写表达式：监控项为账户数量，最近300秒账户数量大于26（根据系统账户数量实际填写），效果如图-4所示。
+
+图-3
+
+图-4
+选择触发器报警级别，如图-5所示，Add创建该触发器，如图-6所示。
+
+图-5
+
+图-6
+步骤二：设置邮件
+
+1）创建Media
+通过Administration（管理）-->Media Type（报警媒体类型）-->选择Email（邮件），如图-7所示。
+
+图-7
+设置邮件服务器信息，设置邮件服务器及邮件账户信息，如图-8所示。
+
+图-8
+2)为用户添加Media
+在Administration（管理）-->Users（用户）中找到选择admin账户，如图-9所示。
+
+图-9
+点击Admin账户后，在弹出的界面中选择Media（报警媒介）菜单-->点击Add(添加)报警媒介，如图-10所示。
+
+图-10
+点击Add（添加）后，在Meida Type中填写报警类型，收件人，时间等信息，如图-11所示。
+
+图-11
+步骤三：创建Action动作
+
+1）Action动作
+Action（动作）是定义当触发器被触发时的时候，执行什么行为。
+通过Configuration（配置）-->Actions（动作）-->Create action（创建动作），如图-12所示。
+
+图-12
+2）配置Action动作的触发条件
+填写Action动作的名称，配置什么触发器被触发时会执行本Action动作（账户数量大于26），如图-13所示。
+
+图-13
+3）配置Action动作的具体行为
+配置动作的具体操作行为（发送信息或执行远程命令），无限次数发送邮件，60秒1次，发送给Admin用户，如图-14和图-15所示。
+
+图-14
+
+图-15
+4）测试效果
+在被监控主机创建账户（让账户数量大于26），然后登录监控端Web页面，在仪表盘中查看问题报警（需要等待一段时间），如图-16所示。
+
+图-16
+查看报警邮件，在监控服务器上使用mail命令查收报警邮件，如图-17所示。
+
+图-17
+2 案例2：Zabbix自动发现
+2.1 问题
+
+沿用前面的练习，配置Zabbix的自动发现机制，实现以下目标：
+创建自动发现规则
+创建自动发现后的动作，添加主机、为主机链接模板
+2.2 方案
+
+什么是自动发现（Discovery）？
+当Zabbix需要监控的设备越来越多，手动添加监控设备越来越有挑战，此时，可以考虑使用自动发现功能，自动添加被监控主机，实现自动批量添加一组监控主机功能。
+自动发现可以实现：
+自动发现、添加主机，自动添加主机到组；
+自动连接模板到主机，自动创建监控项目与图形等。
+自动发现（Discovery）流程：
+创建自动发现规则
+创建Action动作，说明发现主机后自动执行什么动作
+通过动作，执行添加主机，链接模板到主机等操作
+2.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：自动发现规则
+
+1）创建自动发现规则
+通过Configuration（配置）-->Discovery（自动发现）-->Create discovery rule（创建发现规则），如图-18所示。
+
+图-18
+2）填写规则
+填写自动发现的IP范围（逗号隔开可以写多个），多久做一次自动发现（默认为1小时，仅实验修改为1m），如图-19所示。配置检查的方式：HTTP、FTP、Agent的自定义key等检查，如图-20所示。
+
+图-19
+
+图-20
+步骤二：创建动作
+
+1）创建Action动作
+通过Configuration（配置）--> Actions Event source(事件源)：自动发现(Discovery)-->Create action（创建动作），如图-21所示。
+
+图-21
+2）配置Action动作具体行为
+配置动作，添加动作名称，添加触发动作的条件，如图-22所示。
+
+图-22
+点击操作（触发动作后要执行的操作指令），操作细节：添加主机到组，与模板链接（HTTP模板），如图-23所示。
+
+图-23
+步骤二：添加新的虚拟机
+
+1）创建新的虚拟机
+创建一台新的主机，验证zabbix是否可以自动发现该主机，可以重新部署一台新的虚拟机（注意前面的课程，我们已经创建了虚拟机zabbixclient_web2，并且已经安装部署了Zabbix agent，如果没有该虚拟机或没有安装Agent，则需要前在zabbixclient_web2部署Agent），也可以将旧虚拟机的IP地址，临时修改为其他IP。
+2）验证结果
+登陆Zabbix服务器的Web页面，查看主机列表，确认新添加的主机是否被自动加入监控主机列表，是否自动绑定了监控模板。
+3 案例3：Zabbix主动监控
+3.1 问题
+
+沿用前面的练习，配置Zabbix主动监控，实现以下目标：
+修改被监控主机agent为主动监控模式
+克隆模板，修改模板为主动监控模板
+添加监控主机，并链接主动监控模板
+3.2 方案
+
+默认zabbix采用的是被动监控，主动和被动都是对被监控端主机而言的！
+被动监控：Server向Agent发起连接，发送监控key，Agent接受请求，响应监控数据。
+主动监控：Agent向Server发起连接，Agent请求需要检测的监控项目列表，Server响应Agent发送一个items列表，Agent确认收到监控列表，TCP连接完成，会话关闭，Agent开始周期性地收集数据。
+区别：Server不用每次需要数据都连接Agent，Agent会自己收集数据并处理数据，Server仅需要保存数据即可。
+当监控主机达到一定量级后，Zabbix服务器会越来越慢，此时，可以考虑使用主动监控，释放服务器的压力。
+另外，Zabbix也支持分布式监控，也是可以考虑的方案。
+3.3 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：添加被监控主机
+
+1）为被监控主机安装部署zabbix agent
+注意：前面的实验，我们已经在zabbixclient_web2主机安装部署了zabbix agent，如果已经完成，则如下操作可以忽略。
+[root@zabbixclient_web2 ~]# yum -y install gcc pcre-devel
+[root@zabbixclient_web2 ~]# tar -xf zabbix-3.4.4.tar.gz 
+[root@zabbixclient_web2 ~]# cd zabbix-3.4.4/
+[root@zabbixclient_web2 ~]#./configure --enable-agent
+[root@zabbixclient_web2 ~]# make && make install
+2）修改agent配置文件
+将agent监控模式修改为主动模式。
+[root@zabbixclient_web2 ~]# vim /usr/local/etc/zabbix_agentd.conf 
+#Server=127.0.0.1,192.168.2.5
+//注释该行，允许谁监控本机
+StartAgents=0            
+//被动监控时启动多个进程
+//设置为0，则禁止被动监控，不启动zabbix_agentd服务
+ServerActive=192.168.2.5
+//允许哪些主机监控本机（主动模式），一定要取消127.0.0.1
+Hostname=zabbixclient_web2
+//告诉监控服务器，是谁发的数据信息
+//一定要和zabbix服务器配置的监控主机名称一致（后面设置）
+RefreshActiveChecks=120
+//默认120秒检测一次
+UnsafeUserParameters=1            
+//允许自定义key
+Include=/usr/local/etc/zabbix_agentd.conf.d/
+[root@zabbixclient_web2 ~]# killall zabbix_agentd                    //关闭服务
+[root@zabbixclient_web2 ~]# zabbix_agentd                            //启动服务
+步骤二：创建主动监控的监控模板
+
+1）克隆Zabbix自动的监控模板
+为了方便，克隆系统自带模板（在此基础上就该更方便）。
+通过Configuration（配置）-->Templates（模板）-->选择Template OS Linux
+-->全克隆，克隆该模板，新建一个新的模板。如图-24所示。
+新模板名称为：Template OS Linux ServerActive。
+
+图-24
+2）修改模板中的监控项目的监控模式
+将模板中的所有监控项目全部修改为主动监控模式，通过Configuration（配置）-->Templates（模板）-->选择新克隆的模板，点击后面的Items（监控项）-->点击全选，选择所有监控项目，点击批量更新，将类型修改为：Zabbix Agent（Active主动模式），如图-25所示。
+
+图-25
+3）禁用部分监控项目
+批量修改监控项的监控模式后，并非所有监控项目都支持主动模式，批量修改后，会发现有几个没有修改主动模式成功，说明，这些监控项目不支持主动模式，关闭即可。
+可以点击类型排序，方便操作，点击状态即可关闭。如图-26所示。
+
+图-26
+步骤三：添加监控主机
+
+1）手动添加监控主机（主动模式监控）
+在Zabbix监控服务器，添加被监控的主机（主动模式），设置主机名称：zabbixclient_web2	（必须与被监控端的配置文件Hostname一致），将主机添加到Linux servers组，IP地址修改为0.0.0.0，端口设置为0，如图-27和图-28所示。
+
+图-27
+
+图-28
+为主机添加监控模板，选择刚刚创建的模板（主动模式），添加链接模板到主机，如图-29所示。
+
+图-29
+2）验证监控效果
+查看数据图表，通过Monitoring-->Graphs菜单，选择需要查看的主机组、主机以及图形，查看效果，如图-30所示。
+
+图-30
+CPU、内存等其他数据可用正常获取，但是，查看分区图表时并无数据，因为分区数据采用的是自动发现监控，与普通监控项一样，修改为主动模式即可，选择Template OS Linux ServerActive模板，修改Discovery自动发现为主动模式。如图-31所示。
+
+图-31
+4 案例4：拓扑图与聚合图形
+4.1 问题
+
+沿用前面的练习，熟悉zabbix拓扑图与聚合图形，实现以下目标：
+创建修改拓扑图
+创建聚合图形
+4.2 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：创建拓扑图
+
+1）创建拓扑
+绘制拓扑图可以快速了解服务器架构，通过Monitoring（监控中）-->Maps（拓扑图），选择默认的Local network拓扑图，编辑即可（也可以新建一个拓扑图），如图-32所示。
+
+图-32
+2）拓扑图图表说明
+Icon（图标），添加新的设备后可以点击图标修改属性
+Shape（形状）
+Link（连线），先选择两个图标，再选择连线
+完成后，点击Update（更新）
+创建完拓扑图，效果如图-33所示。
+
+图-33
+步骤二：创建聚合图形
+
+1）创建聚合图形
+聚合图形可以在一个页面显示多个数据图表，方便了解多组数据。
+通过Monitoring（监控中）-->Screens（聚合图形）-->Create screen(创建聚合图形)即可创建聚合图形，如图-34所示。
+
+图-34
+修改聚合图形参数如下：
+Owner：使用默认的Admin用户
+Name：名称设置为zabbixclient_web2_host
+Columns：列数设置为2列
+Rows：行数设置为4行
+2）为聚合图形中添加监控图形
+选择刚刚创建的聚合图形（zabbixclient_web2_host)，点击后面的构造函数（constructor），点击Change(更改)，设置每行每列需要显示的数据图表，如图-35所示。
+
+图-35
+5 案例5：自定义监控案例
+5.1 问题
+
+沿用前面的练习，使用自定义key监控常用监控项目，实现以下目标：
+监控Nginx状态
+监控网络连接状态
+5.2 步骤
+
+实现此案例需要按照如下步骤进行。
+步骤一：监控Nginx服务状态
+
+1）准备环境，部署nginx软件
+安装nginx软件，开启status模块
+[root@zabbixclient_web1 nginx-1.12.2]# ./configure \
+> --with-http_stub_status_module 
+[root@zabbixclient_web1 nginx-1.12.2]# make && make install
+[root@zabbixclient_web1 ~]# cat /usr/local/nginx/conf/nginx.conf
+… …
+location /status {
+                stub_status on;
+        }
+… …
+[root@zabbixclient_web1 ~]# curl  http://192.168.2.100/status
+Active connections: 1 
+server accepts handled requests
+10 10 3 
+Reading: 0 Writing: 1 Waiting: 0
+2）自定义监控key
+语法格式：
+UserParameter=key,command
+UserParameter=key[*],<command>
+key里的所有参数，都会传递给后面命令的位置变量
+如：
+UserParameter=ping[*],echo $1
+ping[0]，	返回的结果都是0
+ping[aaa]，	返回的结果都是aaa
+注意：被监控端修改配置文件，注意要允许自定义key并设置Include！
+创建自定义key
+[root@zabbixclient_web1 ~]# vim /usr/local/etc/zabbix_agentd.conf.d/nginx.status
+UserParameter=nginx.status[*],/usr/local/bin/nginx_status.sh $1
+[root@zabbixclient_web1 ~]# killall zabbix_agentd
+[root@zabbixclient_web1 ~]# zabbix_agentd
+自定义监控脚本（仅供参考，未检测完整状态）
+[root@zabbixclient_web1 ~]# vim /usr/local/bin/nginx_status.sh
+#!/bin/bash
+case $1 in
+active)
+    curl -s http://192.168.2.100/status |awk '/Active/{print $NF}';;
+waiting)
+    curl -s http://192.168.2.100/status |awk '/Waiting/{print $NF}';;
+accepts)
+    curl -s http://192.168.2.100/status |awk 'NR==3{print $2}';;
+esac
+[root@zabbixclient_web1 ~]# chmod +x  /usr/local/bin/nginx_status.sh
+测试效果：
+[root@zabbixclient_web1 ~]# zabbix_get  -s 127.0.0.1 \
+ -k 'nginx.status[accepts]'
+登陆Zabbix监控Web，创建监控项目item，点击Configuration（配置）-->Hosts(主机)，点击主机后面的items（项目），点击Create item（创建项目）。修改项目参数如图-36所示。
+
+图-36
+步骤二：监控网络连接状态
+
+1）了解TCP协议
+熟悉TCP三次握手，参考图-37。
+
+图-37
+熟悉TCP连接的四次断开，参考图-38。
+
+图-38
+2）查看网络连接状态
+模拟多人并发连接
+[root@zabbixclient_web1 ~]# ab -c 1000 -n 100000 http://192.168.2.100/
+查看网络连接状态，仔细观察、分析第二列的数据
+[root@zabbixclient_web1 ~]# ss -antup
+//-a显示所有
+//-t显示TCP连接状态
+//-u显示UDP连接状态
+//-n以数字形式显示端口号和IP地址
+//-p显示连接对应的进程名称
+3）创建自定义key
+注意：被监控端修改配置文件，注意要允许自定义key并设置Include。
+[root@zabbixclient_web1 ~]# vim /usr/local/etc/zabbix_agentd.conf.d/net.status
+UserParameter=net.status[*],/usr/local/bin/net_status.sh $1
+[root@zabbixclient_web1 ~]# killall zabbix_agentd
+[root@zabbixclient_web1 ~]# zabbix_agentd
+自定义监控脚本（仅供参考，未检测完整状态）
+[root@zabbixclient_web1 ~]# vim /usr/local/bin/net_status.sh 
+#!/bin/bash
+case $1 in
+estab)
+    ss -antp |awk '/^ESTAB/{x++} END{print x}';;
+close_wait)
+    ss -antp |awk '/^CLOSE-WAIT/{x++} END{print x}';;
+time_wait)
+    ss -antp |awk '/^TIME-WAIT/{x++} END{print x}';;
+esac 
+[root@zabbixclient_web1 ~]# chmod +x  /usr/local/bin/net_status.sh
+测试效果：
+[root@zabbixclient_web1 ~]# zabbix_get  -s 127.0.0.1 \
+-k 'net.status[time_wait]'
+4) 监控netstatus
+在监控服务器，添加监控项目item，Configuration-->Hosts点击主机后面的items
+点击Create item，如图-39所示。
+
+图-39
+
+
+
+
+###################################################
+##################################################
+####################################################
+
+
+
+
+
+
+****** chage   账户
+	passwd 
+	chattr 、lsatter
+	su   sudo     visudo =vim /etc/sudoers
+	ssh  sshd 黑白名单，远程权限  密钥验证
+	ssh-keygen     whoami
+	selinux   sestatus   chcon  
+
+
+
+******  
+	md5 校验工具  md5sum
+	GnuPG  加解密工具 gpg --version
+	AIDE 入侵监测系统  aide
+	NMAP 扫描分析工具  nmap
+	tcpdump 网络抓包工具 tcpdump 
+
+
+
+
+******audit  监控文件 审计
+	常见服务的安全    优化   nginx   mysql  tomcat
+	diff  和patch 工具打补丁
+
+
+
+****** iptables  四表五链  
+	4表  nat    filter   raw   mangle
+	5链  INPUT  OUTPUT  FORWARD  PREROUTING  POSTROUTING
+	选项  -A -I     -L -n --line-numbers    -D -F   -P 	
+	通用匹配  -p  -s,-d  -i,-o    --sport,--dport 
+						 --icmp-type ICMP 类型	
+	#service iptables save  #永久保存所有iptables 规则
+
+
+*** ps  uptime  free   swapon -s    df -h    ifconfig
+      netstat,ss   ping  traceroute    iostat
+***  部署监控	
+	zabbix
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
